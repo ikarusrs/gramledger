@@ -164,7 +164,7 @@ Single Neon Postgres database. All schema changes via SQL migrations.
 - `public_works` (id, panchayat_id, fy, title, status, sanctioned_amount, spent_amount, start_date, end_date, geo_tag jsonb)
 - `assets` (id, panchayat_id, category, description, value, status)
 - `schemes` (id, code, name_mr, name_en, ministry, description, eligibility jsonb)
-- `market_prices` (id, market, district_id, commodity, variety, min_price, max_price, modal_price, price_date, UNIQUE(market, commodity, variety, price_date))
+- `commodity_prices` (id, district_lgd_code, market, commodity, variety, grade, min_price, max_price, modal_price, price_date, UNIQUE(district_lgd_code, market, commodity, variety, grade, price_date)) — renamed from `market_prices` and keyed by LGD code (not `district_id`) so the natural key stays correct across same-named markets in different districts; `grade` included (see `etl/sources/data_gov_in/README.md`)
 - `weather_cache` (district_id, issued_at, forecast jsonb)
 
 ### User data
@@ -184,7 +184,7 @@ Single Neon Postgres database. All schema changes via SQL migrations.
 ### Indexes
 
 - `grants`, `expenditures`, `public_works`: `(panchayat_id, fy)`, `(panchayat_id, scheme_id)`
-- `market_prices`: `(commodity, price_date)`, `(district_id, price_date)`
+- `commodity_prices`: `(commodity, price_date)`, `(district_lgd_code, price_date)`
 - Names: GiST `pg_trgm` on `panchayats.name_en`, `panchayats.name_mr`, `villages.name_en`
 - `users.email` UNIQUE; `sessions.token_hash` UNIQUE
 
@@ -247,6 +247,12 @@ Purpose: keep a clean, queryable Postgres copy of official open data. All jobs i
 | Reference (LGD)         | Monthly   | data.gov.in LGD dataset              | Hierarchy + codes                     |
 
 ### Pipeline steps (per source)
+
+The shared framework in `etl/` implements orchestration (steps 1–7): fetch with
+backoff retry, parse, normalize, validate (dead-letter on rejection),
+deduplicate, batched upsert, and `ingestion_runs` audit. Each source supplies
+its stage functions and wires them with `createPipeline` (see `etl/README.md`).
+Remaining per-source work: snapshot (8) and alerting (9).
 
 1. **Fetch** — retry with exponential backoff; respect robots/ToS; polite rate limit.
 2. **Parse** — HTML → structured records (or JSON/CSV for API sources).
