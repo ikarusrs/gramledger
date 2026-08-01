@@ -32,22 +32,23 @@ hooks (`.githooks/`), and copies `.env.example`/`.dev.vars.example` files.
 
 ## Commands
 
-| Command                                   | What it does                                    |
-| ----------------------------------------- | ----------------------------------------------- |
-| `npm run setup`                           | Install deps + git hooks + env files            |
-| `npm run dev:api`                         | Run the API with `wrangler dev` (hot reload)    |
-| `npm run lint`                            | ESLint (api) + `flutter analyze` (mobile)       |
-| `npm run lint:fix`                        | Same, auto-fixing ESLint issues                 |
-| `npm run format`                          | Prettier + `dart format` (write)                |
-| `npm run format:check`                    | Same, but only verify                           |
-| `npm run test`                            | Vitest (api) + `flutter test` (mobile)          |
-| `npm run build`                           | Type-check (api) + `flutter build web` (mobile) |
-| `npm run clean`                           | Remove build artifacts                          |
-| `npm run clean -- --full`                 | Also remove `node_modules`, `.dart_tool`        |
-| `npm run db:migrate`                      | Apply DB migrations                             |
-| `npm run db:migrate:create -- --name <x>` | Scaffold a new migration                        |
-| `npm run db:migrate:down`                 | Roll back the last migration                    |
-| `npm run db:seed`                         | Apply seed data                                 |
+| Command                            | What it does                                           |
+| ---------------------------------- | ------------------------------------------------------ |
+| `npm run setup`                    | Install deps + git hooks + env files                   |
+| `npm run dev:api`                  | Run the API with `wrangler dev` (hot reload)           |
+| `npm run lint`                     | ESLint (api) + `flutter analyze` (mobile)              |
+| `npm run lint:fix`                 | Same, auto-fixing ESLint issues                        |
+| `npm run format`                   | Prettier + `dart format` (write)                       |
+| `npm run format:check`             | Same, but only verify                                  |
+| `npm run test`                     | Vitest (api) + `flutter test` (mobile)                 |
+| `npm run build`                    | Type-check (api) + `flutter build web` (mobile)        |
+| `npm run clean`                    | Remove build artifacts                                 |
+| `npm run clean -- --full`          | Also remove `node_modules`, `.dart_tool`               |
+| `npm run db:migrate`               | Apply DB migrations                                    |
+| `npm run db:migrate:create -- <x>` | Scaffold a new migration                               |
+| `npm run db:migrate:down`          | Roll back the last migration                           |
+| `npm run db:migrate:test`          | Apply migrations to the test DB (`database/.env.test`) |
+| `npm run db:seed`                  | Apply seed data                                        |
 
 ### Running the mobile app
 
@@ -92,6 +93,11 @@ Defaults (used when flags are omitted): `API_BASE_URL=http://localhost:8787`,
 - Connection string: `DATABASE_URL` in `database/.env` (gitignored; template:
   `.env.example`). Create a Neon project (or use a local Postgres) and paste the
   pooled URL.
+- Test database: `DATABASE_URL` in `database/.env.test` (gitignored; template:
+  `.env.test.example`) — used by `npm run db:migrate:test`. Point it at a
+  scratch database; never your dev/prod DB.
+- Full schema reference, ER diagram, and indexing strategy:
+  [database/README.md](database/README.md).
 
 ## Localization
 

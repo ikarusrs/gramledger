@@ -17,8 +17,9 @@
     "build": "bash scripts/build.sh",
     "clean": "bash scripts/clean.sh",
     "db:migrate": "npm --workspace database run migrate",
-    "db:migrate:create": "npm --workspace database run migrate:create",
+    "db:migrate:create": "npm --workspace database run migrate:create --",
     "db:migrate:down": "npm --workspace database run migrate:down",
+    "db:migrate:test": "npm --workspace database run migrate:test",
     "db:seed": "npm --workspace database run seed",
     "dev:api": "npm --workspace apps/api run dev"
   },

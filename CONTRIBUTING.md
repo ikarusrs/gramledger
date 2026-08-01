@@ -71,7 +71,7 @@ npm run build       # Type-check (api) + flutter build web (mobile)
 
 ## Database changes
 
-- Add a **migration** (`npm run db:migrate:create -- --name <change>`) and
+- Add a **migration** (`npm run db:migrate:create -- <change>`) and
   commit the SQL **and** its `down` script.
 - Add seed data under `database/seeds/` only for reference/curated data;
   transactional data belongs to ETL.

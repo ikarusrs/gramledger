@@ -38,7 +38,7 @@ gramledger/
 5. **Versioned API contract**: all feature endpoints mount under `/v1`
    (`src/routes/v1/`). Never mutate an existing endpoint's payload — add a version.
 6. **Never edit applied DB migrations.** Add a new one
-   (`npm run db:migrate:create -- --name <change>`). SQL-only, with an up _and_ down.
+   (`npm run db:migrate:create -- <change>`). SQL-only, with an up _and_ down.
 7. **Generated files are not edited**: `apps/mobile/lib/l10n/app_localizations*.dart`.
    Edit the ARB sources (`app_en.arb` / `app_mr.arb`) and run `flutter gen-l10n`.
 8. **No new dependencies** without a stated reason — check existing deps and

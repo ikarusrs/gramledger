@@ -25,7 +25,7 @@ if [ "${#FILES[@]}" -eq 0 ]; then
 fi
 
 if [ "$FIX" = "1" ]; then
-  pg_format -i "${FILES[@]}"
+  pg_format --no-extra-line -i "${FILES[@]}"
   echo "Formatted ${#FILES[@]} SQL file(s)."
 else
   for f in "${FILES[@]}"; do
