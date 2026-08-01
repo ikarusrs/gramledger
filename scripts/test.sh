@@ -9,6 +9,9 @@ cd "$ROOT"
 echo "==> Vitest (apps/api)"
 npm run test --workspace apps/api
 
+echo "==> Vitest (etl)"
+npm run test --workspace etl
+
 echo "==> Flutter test (apps/mobile)"
 if command -v flutter >/dev/null 2>&1; then
   (cd apps/mobile && flutter test)

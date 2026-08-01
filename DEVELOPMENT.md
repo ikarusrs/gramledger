@@ -4,12 +4,12 @@ This document explains how to set up, run, and work on GramLedger locally.
 
 ## Prerequisites
 
-| Tool        | Version                      | Purpose                                      |
-| ----------- | ---------------------------- | -------------------------------------------- |
-| Flutter SDK | 3.44.x (stable), Dart 3.12.x | Mobile app (`apps/mobile`)                   |
-| Node.js     | >= 20                        | TypeScript projects (`apps/api`, `database`) |
-| npm         | 9+                           | Workspace tooling                            |
-| git         | any                          | Version control                              |
+| Tool        | Version                      | Purpose                                             |
+| ----------- | ---------------------------- | --------------------------------------------------- |
+| Flutter SDK | 3.44.x (stable), Dart 3.12.x | Mobile app (`apps/mobile`)                          |
+| Node.js     | >= 20                        | TypeScript projects (`apps/api`, `database`, `etl`) |
+| npm         | 9+                           | Workspace tooling                                   |
+| git         | any                          | Version control                                     |
 
 PostgreSQL itself is **not** required locally — the database package connects to
 Neon over the network (see below). For local-only work you may point
@@ -36,12 +36,12 @@ hooks (`.githooks/`), and copies `.env.example`/`.dev.vars.example` files.
 | ---------------------------------- | ------------------------------------------------------ |
 | `npm run setup`                    | Install deps + git hooks + env files                   |
 | `npm run dev:api`                  | Run the API with `wrangler dev` (hot reload)           |
-| `npm run lint`                     | ESLint (api) + `flutter analyze` (mobile)              |
+| `npm run lint`                     | ESLint (api, etl) + `flutter analyze` (mobile)         |
 | `npm run lint:fix`                 | Same, auto-fixing ESLint issues                        |
 | `npm run format`                   | Prettier + `dart format` (write)                       |
 | `npm run format:check`             | Same, but only verify                                  |
-| `npm run test`                     | Vitest (api) + `flutter test` (mobile)                 |
-| `npm run build`                    | Type-check (api) + `flutter build web` (mobile)        |
+| `npm run test`                     | Vitest (api, etl) + `flutter test` (mobile)            |
+| `npm run build`                    | Type-check (api, etl) + `flutter build web` (mobile)   |
 | `npm run clean`                    | Remove build artifacts                                 |
 | `npm run clean -- --full`          | Also remove `node_modules`, `.dart_tool`               |
 | `npm run db:migrate`               | Apply DB migrations                                    |
@@ -113,9 +113,13 @@ ARB source files live in `apps/mobile/lib/l10n/` (`app_en.arb`, `app_mr.arb`).
 
 - **API**: `apps/api/test/` (Vitest). Drive the app with `buildApp().request(...)` —
   no network needed.
+- **ETL**: `etl/tests/` (Vitest). Unit tests need no Postgres; the integration
+  test (`db.integration.test.ts`) runs when `DATABASE_URL` points at a migrated
+  scratch DB and is skipped otherwise. Run it with:
+  `DATABASE_URL=… npm run test --workspace etl`.
 - **Mobile**: `apps/mobile/test/` (widget tests via `flutter test`).
 - **Database**: migrations are SQL; verify with `npm run db:migrate` against a
-  scratch database. ETL tests will come with the ETL package.
+  scratch database.
 
 ## Repository hygiene
 

@@ -13,14 +13,15 @@ gramledger/
 │   ├── api/          # Cloudflare Worker — Hono (TypeScript), versioned REST API
 │   └── mobile/       # Flutter app — Android + Web PWA (Marathi-first, bilingual)
 ├── database/         # PostgreSQL (Neon) migrations + seeds (node-pg-migrate)
-├── etl/              # Ingestion pipelines (placeholder — not implemented)
+├── etl/              # Ingestion framework: shared pipeline + sinks + source modules
 ├── packages/         # Shared TS/Dart packages (placeholder — none yet)
 ├── docs/             # Planning + architecture documentation
 └── scripts/          # Repo-wide developer scripts (setup/lint/format/test/...)
 ```
 
-npm workspaces cover the TypeScript projects (`apps/api`, `database`). Flutter
-uses its own toolchain inside `apps/mobile` and is driven by the repo scripts.
+npm workspaces cover the TypeScript projects (`apps/api`, `database`, `etl`).
+Flutter uses its own toolchain inside `apps/mobile` and is driven by the repo
+scripts.
 
 ## Key decisions (from PLANNING.md)
 
@@ -79,4 +80,13 @@ Flutter (Android + Web PWA)        GitHub Actions cron (future ETL)
   when the first `/v1` feature endpoint lands.
 - Decide Dart API-client generation strategy (hand-written vs generated from the
   TypeScript contract) — see `packages/`.
-- Define the ETL scheduler (GitHub Actions cron) and scraper modules in `etl/`.
+- Pick the first real ETL source (see `etl/`) and a scheduler (GitHub Actions
+  cron vs Worker Cron Trigger).
+
+## ETL
+
+`etl/` is a reusable framework, not one scraper: each source implements the
+stage functions (`fetch`, `parse`, `validate`, `normalize`, plus optional
+`deduplicate`/`transform`) and wires them with `createPipeline`, reusing the
+Postgres upsert loader, dead-letter sink, and audit sink. Every run writes a
+`RunReport` to `ingestion_runs`. See `etl/README.md` for the extension guide.

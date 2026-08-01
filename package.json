@@ -5,7 +5,8 @@
   "description": "Panchayat transparency + AI farmer assistance for Maharashtra",
   "workspaces": [
     "apps/api",
-    "database"
+    "database",
+    "etl"
   ],
   "scripts": {
     "setup": "bash scripts/setup.sh",

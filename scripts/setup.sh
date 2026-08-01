@@ -6,7 +6,7 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$ROOT"
 
-echo "==> Installing JS/TS workspace dependencies (apps/api, database)"
+echo "==> Installing JS/TS workspace dependencies (apps/api, database, etl)"
 npm install
 
 echo "==> Installing Flutter dependencies (apps/mobile)"

@@ -3,7 +3,8 @@
 A mobile application for Maharashtra that improves **Panchayat transparency** and
 provides **AI-powered farmer assistance**, built exclusively on official open data.
 
-**Status:** repository bootstrapped (foundation only — no features yet).
+**Status:** foundation only — the ETL framework in `etl/` is implemented, but no
+features or live data sources yet.
 See [docs/PLANNING.md](docs/PLANNING.md) for the approved architecture and
 roadmap, and [docs/architecture.md](docs/architecture.md) for how the repo is
 structured.
@@ -16,7 +17,7 @@ structured.
 | API      | Cloudflare Workers — Hono / TypeScript, versioned REST               |
 | Database | PostgreSQL on Neon (raw Postgres), SQL migrations                    |
 | Storage  | Cloudflare R2 (planned)                                              |
-| ETL      | GitHub Actions cron → scraping/pull pipelines (planned)              |
+| ETL      | Reusable TS pipeline (`etl/`) run on GitHub Actions cron (planned)   |
 | AI       | Gemini Flash (RAG chatbot) · on-device TFLite (Phase 2) · rule-based |
 
 ## Key decisions
@@ -35,7 +36,7 @@ structured.
 apps/mobile/    Flutter application
 apps/api/       Cloudflare Workers API (Hono)
 database/       SQL migrations + seeds (node-pg-migrate)
-etl/            Ingestion pipelines (placeholder)
+etl/            Ingestion framework: shared pipeline + sinks + source modules
 packages/       Shared packages (placeholder)
 docs/           Planning + architecture documentation
 scripts/        Repo-wide developer scripts

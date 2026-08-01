@@ -36,6 +36,9 @@ build/
 # Wrangler (local dev state)
 .wrangler/
 
+# ETL dead-letter queue
+.dead-letter/
+
 # Flutter gen-l10n diagnostics
 untranslated.txt
 

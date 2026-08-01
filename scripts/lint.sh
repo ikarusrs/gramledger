@@ -11,7 +11,7 @@ if [ "${1:-}" = "--fix" ]; then
   ARGS+=(-- --fix)
 fi
 
-echo "==> ESLint (apps/api, database)"
+echo "==> ESLint (apps/api, database, etl)"
 npm run lint --workspaces --if-present "${ARGS[@]}"
 
 echo "==> Flutter analyze (apps/mobile)"

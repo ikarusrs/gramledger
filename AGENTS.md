@@ -12,14 +12,14 @@ gramledger/
 ├── apps/api/        Cloudflare Worker — Hono + TypeScript, versioned REST API
 ├── apps/mobile/     Flutter app — Android + Web PWA (Marathi-first, bilingual)
 ├── database/        PostgreSQL (Neon) — SQL migrations + seeds (node-pg-migrate)
-├── etl/             placeholder only (not implemented yet)
+├── etl/             ingestion framework — shared pipeline, sinks, source modules
 ├── packages/        shared packages (empty; see packages/README.md before adding)
 ├── docs/            PLANNING.md + architecture.md
 ├── scripts/         repo-wide scripts (setup/lint/format/test/build/clean)
 └── .githooks/       pre-commit hook (prettier + dart format on staged files)
 ```
 
-- **TS workspaces**: npm workspaces = `apps/api`, `database`. Root `package.json`
+- **TS workspaces**: npm workspaces = `apps/api`, `database`, `etl`. Root `package.json`
   holds security `overrides` — do not remove.
 - **Node >= 20. Wrangler is pinned to v3** (Node 20 compatible) — do not bump to v4.
 - **Flutter** uses its own toolchain under `apps/mobile`; driven by repo scripts.
@@ -80,6 +80,19 @@ Fast single-project loops: `npm run <x> --workspace apps/api` or
 - Runtime config is compile-time `--dart-define` (`lib/core/config/app_config.dart`):
   `API_BASE_URL`, `ENVIRONMENT`, `DEFAULT_LOCALE`. Don't add runtime config.
 - Marathi (`mr`) is the default locale; ARB keys must exist in both files.
+
+### etl (Node ETL framework)
+
+- Shared pipeline (`src/core/pipeline.ts`): sources implement stage functions
+  (`fetch`, `parse`, `validate`, `normalize`, optional `deduplicate`/`transform`)
+  and wire them with `createPipeline`. Reuse `createUpsertLoader`,
+  `FileDeadLetterSink`, `createPostgresAuditSink` from `src/sinks/`.
+- Only `fetch` retries (retryable `ETLError`); load failures dead-letter and
+  the run reports `partial`. Config is env-driven (`ETL_*`, see `src/core/config.ts`).
+- Tests are `tests/*.test.ts`; the Postgres integration test skips when
+  `DATABASE_URL` is unset. Extension guide: `etl/README.md` + `sources/example/`.
+- `ingestion_runs.source` is CHECK-constrained to the canonical source names
+  (`egramswaraj`, `data_gov_in`, `imd`, `agmarknet`, `lgd`) — use them in tests.
 
 ### database
 
