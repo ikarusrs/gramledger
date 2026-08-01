@@ -1,0 +1,15 @@
+# Ignore generated and build output
+node_modules
+dist
+coverage
+build
+.dart_tool
+*.lock
+
+# Lang-specific
+database/migrations
+database/seeds
+apps/mobile/.dart_tool
+apps/mobile/build
+apps/mobile/android/.gradle
+apps/mobile/ios/Pods

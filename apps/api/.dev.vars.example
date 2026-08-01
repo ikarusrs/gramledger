@@ -1,0 +1,5 @@
+# Local-only overrides for `wrangler dev`. Copy to `.dev.vars`.
+# These values are never committed. Production values are set via
+# `wrangler secret put <KEY>` or the Cloudflare dashboard.
+ENVIRONMENT=development
+LOG_LEVEL=debug

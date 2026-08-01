@@ -1,0 +1,18 @@
+{
+  "@@locale": "mr",
+  "appTitle": "ग्रामलेजर",
+  "appTagline": "पंचायत पारदर्शिता आणि शेतकरी सहाय्य",
+  "homeTitle": "मुख्यपृष्ठ",
+  "homeSubtitle": "महाराष्ट्रातील पंचायतींचा शोध घ्या",
+  "settingsTitle": "सेटिंग्ज",
+  "settingsAppearance": "स्वरूप",
+  "settingsThemeMode": "थीम",
+  "settingsThemeLight": "उजळ",
+  "settingsThemeDark": "गडद",
+  "settingsThemeSystem": "प्रणालीनुसार",
+  "settingsLanguage": "भाषा",
+  "settingsLanguageMr": "मराठी",
+  "settingsLanguageEn": "English",
+  "openSettings": "सेटिंग्ज उघडा",
+  "backToHome": "मुख्यपृष्ठावर परत"
+}

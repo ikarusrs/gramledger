@@ -1,0 +1,37 @@
+{
+  "name": "gramledger",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Panchayat transparency + AI farmer assistance for Maharashtra",
+  "workspaces": [
+    "apps/api",
+    "database"
+  ],
+  "scripts": {
+    "setup": "bash scripts/setup.sh",
+    "lint": "bash scripts/lint.sh",
+    "lint:fix": "bash scripts/lint.sh --fix",
+    "format": "bash scripts/format.sh",
+    "format:check": "bash scripts/format.sh --check",
+    "test": "bash scripts/test.sh",
+    "build": "bash scripts/build.sh",
+    "clean": "bash scripts/clean.sh",
+    "db:migrate": "npm --workspace database run migrate",
+    "db:migrate:create": "npm --workspace database run migrate:create",
+    "db:migrate:down": "npm --workspace database run migrate:down",
+    "db:seed": "npm --workspace database run seed",
+    "dev:api": "npm --workspace apps/api run dev"
+  },
+  "devDependencies": {
+    "prettier": "^3.6.2"
+  },
+  "overrides": {
+    "ws": "^8.21.1",
+    "undici": "^6.28.0",
+    "esbuild": "^0.25.0",
+    "sharp": "^0.35.0"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}

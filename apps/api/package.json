@@ -1,0 +1,32 @@
+{
+  "name": "@gramledger/api",
+  "version": "0.1.0",
+  "private": true,
+  "description": "GramLedger API — Cloudflare Workers (Hono/TypeScript)",
+  "type": "module",
+  "scripts": {
+    "dev": "wrangler dev",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "format": "prettier --write --ignore-unknown \"src/**/*.ts\" \"test/**/*.ts\" \"*.{ts,json,mjs}\"",
+    "format:check": "prettier --check --ignore-unknown \"src/**/*.ts\" \"test/**/*.ts\" \"*.{ts,json,mjs}\"",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "build": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@hono/zod-validator": "^0.7.0",
+    "hono": "^4.11.0",
+    "zod": "^3.25.0"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^4.20260601.0",
+    "@types/node": "^22.0.0",
+    "eslint": "^9.0.0",
+    "typescript": "^5.7.0",
+    "typescript-eslint": "^8.0.0",
+    "vitest": "^3.0.0",
+    "wrangler": "^3.114.17"
+  }
+}

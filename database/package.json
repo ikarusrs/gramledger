@@ -1,0 +1,20 @@
+{
+  "name": "@gramledger/database",
+  "version": "0.1.0",
+  "private": true,
+  "description": "GramLedger PostgreSQL schema migrations and seeds (Neon)",
+  "type": "module",
+  "scripts": {
+    "migrate": "node-pg-migrate -m migrations",
+    "migrate:create": "node-pg-migrate create -j sql",
+    "migrate:down": "node-pg-migrate down -m migrations",
+    "migrate:up": "node-pg-migrate up -m migrations",
+    "seed": "bash scripts/seed.sh",
+    "lint": "bash scripts/check-sql.sh",
+    "format": "bash scripts/check-sql.sh --fix",
+    "format:check": "bash scripts/check-sql.sh"
+  },
+  "devDependencies": {
+    "node-pg-migrate": "^8.0.0"
+  }
+}

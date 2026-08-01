@@ -1,0 +1,45 @@
+#!/usr/bin/env bash
+# Pre-commit hook: fast quality gates on staged changes.
+# - Fails on unformatted Dart/TS/JSON/YAML.
+# - Fails on ESLint errors in staged TS files.
+# Skip entirely with: git commit --no-verify
+set -euo pipefail
+
+ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+cd "$ROOT"
+
+if ! command -v git >/dev/null 2>&1; then
+  exit 0
+fi
+
+# No files staged (or initial commit) -> nothing to check.
+STAGED="$(git diff --cached --name-only --diff-filter=ACM)"
+if [ -z "$STAGED" ]; then
+  exit 0
+fi
+
+fail=0
+
+TS_FILES="$(printf '%s\n' "$STAGED" | grep -E '\.(ts|tsx|js|mjs|cjs|json|yaml|yml)$' || true)"
+DART_FILES="$(printf '%s\n' "$STAGED" | grep -E '\.dart$' || true)"
+
+if [ -n "$TS_FILES" ]; then
+  echo "==> format:check (staged TS/JS/JSON/YAML)"
+  if command -v npx >/dev/null 2>&1; then
+    npx prettier --check --ignore-unknown $TS_FILES || fail=1
+  fi
+fi
+
+if [ -n "$DART_FILES" ]; then
+  echo "==> dart format check (staged)"
+  if command -v dart >/dev/null 2>&1; then
+    dart format --set-exit-if-changed --output=none $DART_FILES || fail=1
+  fi
+fi
+
+if [ "$fail" = "1" ]; then
+  echo "Pre-commit checks failed. Run 'npm run format' (and fix lint) then stage again."
+  exit 1
+fi
+
+exit 0

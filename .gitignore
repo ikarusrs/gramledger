@@ -1,0 +1,46 @@
+# OS
+.DS_Store
+Thumbs.db
+*.swp
+*~
+
+# Editors / IDE
+.idea/
+.vscode/
+*.iml
+
+# Logs
+*.log
+logs/
+
+# Environment / secrets
+.env
+.env.*
+!.env.example
+.dev.vars
+*.dev.vars
+*.pem
+*.key
+
+# Node
+node_modules/
+dist/
+coverage/
+*.tsbuildinfo
+
+# Flutter / Dart (managed in apps/mobile/.gitignore)
+.dart_tool/
+build/
+
+# Wrangler (local dev state)
+.wrangler/
+
+# Flutter gen-l10n diagnostics
+untranslated.txt
+
+# Python (pre-commit, if used)
+.python-version
+__pycache__/
+
+# Misc
+tmp/

@@ -1,0 +1,18 @@
+{
+  "@@locale": "en",
+  "appTitle": "GramLedger",
+  "appTagline": "Panchayat transparency & farmer assistance",
+  "homeTitle": "Home",
+  "homeSubtitle": "Explore Maharashtra's panchayats",
+  "settingsTitle": "Settings",
+  "settingsAppearance": "Appearance",
+  "settingsThemeMode": "Theme",
+  "settingsThemeLight": "Light",
+  "settingsThemeDark": "Dark",
+  "settingsThemeSystem": "System",
+  "settingsLanguage": "Language",
+  "settingsLanguageMr": "मराठी",
+  "settingsLanguageEn": "English",
+  "openSettings": "Open settings",
+  "backToHome": "Back to home"
+}

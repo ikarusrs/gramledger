@@ -1,0 +1,55 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  api:
+    name: API (lint + test)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci
+      - name: Type-check
+        run: npm run typecheck --workspace apps/api
+      - name: Lint
+        run: npm run lint --workspace apps/api
+      - name: Format check
+        run: npx prettier --check .
+      - name: Test
+        run: npm run test --workspace apps/api
+
+  mobile:
+    name: Mobile (analyze + test)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+      - name: Pub get
+        working-directory: apps/mobile
+        run: flutter pub get
+      - name: Generate localizations
+        working-directory: apps/mobile
+        run: flutter gen-l10n
+      - name: Analyze
+        working-directory: apps/mobile
+        run: flutter analyze
+      - name: Format check
+        working-directory: apps/mobile
+        run: dart format --set-exit-if-changed lib test
+      - name: Test
+        working-directory: apps/mobile
+        run: flutter test
