@@ -1,7 +1,10 @@
 import type { ETLRecord } from '../../src/core/types.js';
 
-export type EGramReportKind =
-  'district_expenditure' | 'scheme_expenditure' | 'panchayat_profile' | 'public_work' | 'asset';
+export type EGramReportKind = 'monthly_statement' | 'village_statement';
+
+/** Report family this row came from; stored in `financial_statements.source`. */
+export const SOURCE_MONTHLY = 'egramswaraj_monthly';
+export const SOURCE_VILLAGE = 'egramswaraj_village';
 
 export interface EGramSwarajConfig {
   baseUrl: string;
@@ -19,33 +22,29 @@ export interface EGramReportEnvelope {
 
 export interface EGramRecord extends ETLRecord {
   kind: EGramReportKind;
+  source: string;
   financialYear: number;
+  /** Raw period label ("April 2025", "opening_balance", or "total"). */
+  period: string;
+  /** Fiscal-year month number (April = 1 … March = 12) for monthly rows. */
+  monthNo?: number;
   sourceUrl: string;
   sourceHash: string;
   stateName?: string;
-  stateCode?: number;
   districtName?: string;
-  districtCode?: number;
+  blockName?: string;
   panchayatName?: string;
-  panchayatCode?: number;
-  schemeName?: string;
-  schemeCode?: string;
-  title?: string;
-  status?: string;
-  amount?: number;
+  openingBalance?: number;
   receipts?: number;
+  receiptCancellation?: number;
+  obCancellation?: number;
   payments?: number;
-  sanctionedAmount?: number;
-  spentAmount?: number;
-  startDate?: string;
-  endDate?: string;
-  category?: string;
-  description?: string;
+  paymentCancellation?: number;
   raw: Record<string, string>;
 }
 
 export interface ParseDiagnostics {
-  kind: EGramReportKind | 'unknown';
+  kind: EGramReportKind | 'skipped' | 'unknown';
   warnings: string[];
   tablesSeen: number;
   rowsSeen: number;

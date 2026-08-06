@@ -3,10 +3,7 @@ import type { EGramSwarajConfig } from './types.js';
 
 export type EnvLike = Record<string, string | undefined>;
 
-const DEFAULT_REPORTS = [
-  'FileRedirect.jsp?FD=ExpenditureReport2025-2026/27&name=27.html',
-  'FileRedirect.jsp?FD=SummaryReport2025-2026/27&name=27.html',
-];
+const DEFAULT_REPORTS = ['FileRedirect.jsp?FD=ExpenditureReport2025-2026/27&name=27.html'];
 
 export function loadEGramSwarajConfig(env: EnvLike = process.env): EGramSwarajConfig {
   const contact = env.ETL_EGS_CONTACT_EMAIL?.trim();

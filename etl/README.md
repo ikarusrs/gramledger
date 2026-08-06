@@ -43,6 +43,11 @@ See `sources/example/index.ts` for the full reference implementation (all
 in-memory, no network/DB, runnable as a demo). For a real-world source, see
 `sources/data_gov_in/` (Agmarknet daily mandi prices) — paginated API client,
 dead-lettering validation, district resolution, and a Postgres upsert loader.
+For an HTML-crawl source, see `sources/egramswaraj/` — a BFS crawler over the
+public "Receipt and Payment" report family (state → district → block → GP),
+rowspan-aware table parsing, name-based panchayat resolution, and an upsert
+into `financial_statements`. It needs `ETL_EGS_CONTACT_EMAIL` set (the polite
+user agent advertises it) and a populated LGD hierarchy to resolve names.
 
 ```ts
 // sources/<name>/index.ts — sketch
