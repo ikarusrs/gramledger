@@ -48,6 +48,27 @@ jobs:
       - name: Test
         run: npm run test --workspace etl
 
+  web:
+    name: Web (lint + build + test)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci
+      - name: Type-check
+        run: npm run typecheck --workspace apps/web
+      - name: Lint
+        run: npm run lint --workspace apps/web
+      - name: Format check
+        run: npx prettier --check .
+      - name: Build
+        run: npm run build --workspace apps/web
+      - name: Test
+        run: npm run test --workspace apps/web
+
   mobile:
     name: Mobile (analyze + test)
     runs-on: ubuntu-latest

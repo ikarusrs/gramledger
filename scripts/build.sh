@@ -12,6 +12,9 @@ npm run build --workspace apps/api
 echo "==> Type-check (etl)"
 npm run build --workspace etl
 
+echo "==> Build (apps/web)"
+npm run build --workspace apps/web
+
 echo "==> Flutter build web (apps/mobile)"
 if command -v flutter >/dev/null 2>&1; then
   (cd apps/mobile && flutter build web)
