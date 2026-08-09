@@ -42,8 +42,8 @@ export function getHierarchy(): Promise<ApiResult<Hierarchy>> {
 export function searchPanchayats(query: SearchQuery): Promise<ApiResult<Panchayat[]>> {
   const params = new URLSearchParams();
   if (query.q) params.set('q', query.q);
-  if (query.districtId != null) params.set('district', String(query.districtId));
-  if (query.talukaId != null) params.set('taluka', String(query.talukaId));
+  if (query.districtId != null) params.set('districtId', String(query.districtId));
+  if (query.talukaId != null) params.set('talukaId', String(query.talukaId));
   const qs = params.toString();
   const path = `/v1/panchayats${qs ? `?${qs}` : ''}`;
   return fallible(

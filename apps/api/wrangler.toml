@@ -1,6 +1,7 @@
 name = "gramledger-api"
 main = "src/index.ts"
 compatibility_date = "2026-06-01"
+compatibility_flags = ["nodejs_compat"]
 
 # Non-secret configuration. Production values are overridden per environment
 # via `wrangler` environment vars; secrets are set with `wrangler secret put`.

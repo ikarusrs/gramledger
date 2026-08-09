@@ -29,16 +29,16 @@ export interface Hierarchy {
 }
 
 interface VillageRow extends Row {
-  village_id: number;
+  village_id: string;
   village_code: string;
   village_name_mr: string;
   village_name_en: string;
-  panchayat_id: number | null;
-  taluka_id: number;
+  panchayat_id: string | null;
+  taluka_id: string;
   taluka_code: string;
   taluka_name_mr: string;
   taluka_name_en: string;
-  district_id: number;
+  district_id: string;
   district_code: string;
   district_name_mr: string;
   district_name_en: string;
@@ -68,22 +68,24 @@ hierarchyRouter.get('/hierarchy', async (c) => {
   const districts = new Map<number, District>();
 
   for (const row of rows) {
-    let district = districts.get(row.district_id);
+    const districtId = Number(row.district_id);
+    let district = districts.get(districtId);
     if (!district) {
       district = {
-        id: row.district_id,
+        id: districtId,
         lgdCode: String(row.district_code),
         nameMr: row.district_name_mr,
         nameEn: row.district_name_en,
         talukas: [],
       };
-      districts.set(row.district_id, district);
+      districts.set(districtId, district);
     }
 
-    let taluka = district.talukas.find((t) => t.id === row.taluka_id);
+    const talukaId = Number(row.taluka_id);
+    let taluka = district.talukas.find((t) => t.id === talukaId);
     if (!taluka) {
       taluka = {
-        id: row.taluka_id,
+        id: talukaId,
         lgdCode: String(row.taluka_code),
         nameMr: row.taluka_name_mr,
         nameEn: row.taluka_name_en,
@@ -93,11 +95,11 @@ hierarchyRouter.get('/hierarchy', async (c) => {
     }
 
     taluka.villages.push({
-      id: row.village_id,
+      id: Number(row.village_id),
       lgdCode: String(row.village_code),
       nameMr: row.village_name_mr,
       nameEn: row.village_name_en,
-      panchayatId: row.panchayat_id,
+      panchayatId: row.panchayat_id != null ? Number(row.panchayat_id) : null,
     });
   }
 

@@ -76,8 +76,9 @@ Flutter (Android + Web PWA)        GitHub Actions cron (future ETL)
 
 ## Open items before feature development
 
-- Decide the API data-access library (postgres.js vs @neondatabase/serverless)
-  when the first `/v1` feature endpoint lands.
+- ~~Decide the API data-access library (postgres.js vs @neondatabase/serverless)~~ —
+  resolved: `postgres.js` (works on the Workers runtime and local Postgres; see
+  `apps/api/src/lib/db.ts`).
 - Decide Dart API-client generation strategy (hand-written vs generated from the
   TypeScript contract) — see `packages/`.
 - Pick the first real ETL source (see `etl/`) and a scheduler (GitHub Actions

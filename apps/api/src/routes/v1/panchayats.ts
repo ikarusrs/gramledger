@@ -21,14 +21,14 @@ export interface Panchayat {
 }
 
 interface PanchayatRow extends Row {
-  id: number;
+  id: string;
   lgd_code: string;
   name_mr: string;
   name_en: string;
-  district_id: number;
+  district_id: string;
   district_name_mr: string;
   district_name_en: string;
-  taluka_id: number;
+  taluka_id: string;
   taluka_name_mr: string;
   taluka_name_en: string;
   level: 'gram' | 'block' | 'district';
@@ -79,14 +79,14 @@ panchayatRouter.get('/panchayats', zValidator('query', searchSchema), async (c) 
 
   const rows = (await db.query(sql, params)) as PanchayatRow[];
   const panchayats: Panchayat[] = rows.map((row) => ({
-    id: row.id,
+    id: Number(row.id),
     lgdCode: String(row.lgd_code),
     nameMr: row.name_mr,
     nameEn: row.name_en,
-    districtId: row.district_id,
+    districtId: Number(row.district_id),
     districtNameMr: row.district_name_mr,
     districtNameEn: row.district_name_en,
-    talukaId: row.taluka_id,
+    talukaId: Number(row.taluka_id),
     talukaNameMr: row.taluka_name_mr,
     talukaNameEn: row.taluka_name_en,
     level: row.level,

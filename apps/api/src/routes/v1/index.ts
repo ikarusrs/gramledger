@@ -3,6 +3,7 @@ import type { AppEnv } from '../../config';
 import { hierarchyRouter } from './hierarchy';
 import { panchayatRouter } from './panchayats';
 import { financeRouter } from './finance';
+import { detailRouter } from './profile';
 
 /**
  * Versioned router namespace. All feature endpoints mount under `/v1` (see
@@ -13,3 +14,4 @@ export const v1Router = new Hono<AppEnv>();
 v1Router.route('/', hierarchyRouter);
 v1Router.route('/', panchayatRouter);
 v1Router.route('/', financeRouter);
+v1Router.route('/', detailRouter);

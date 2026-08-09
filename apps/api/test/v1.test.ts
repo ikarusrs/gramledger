@@ -139,3 +139,47 @@ describe('GET /v1/panchayats', () => {
     expect(params).toEqual(['%ak%', 1, 2]);
   });
 });
+
+describe('GET /v1/panchayats/:id', () => {
+  it('returns panchayat fields with its profile', async () => {
+    const db = fakeDb([
+      {
+        id: 7,
+        lgd_code: '700',
+        name_mr: 'पंचायत',
+        name_en: 'Panchayat A',
+        level: 'gram',
+        district_id: 1,
+        district_name_mr: 'जिल्हा',
+        district_name_en: 'District Z',
+        taluka_id: 2,
+        taluka_name_mr: 'तालुका',
+        taluka_name_en: 'Taluka X',
+        sarpanch_name: null,
+        secretary_name: 'अनिल देशमुख',
+        contact_phone: '9876543210',
+        elected_committee: null,
+        updated_at: '2026-01-12T09:30:00Z',
+      },
+    ]);
+
+    const res = await buildApp({ db }).request('/v1/panchayats/7', {}, testBindings);
+    expect(res.status).toBe(200);
+    const body = (await res.json()) as {
+      id: number;
+      level: string;
+      profile: { sarpanchName: string | null; secretaryName: string };
+    };
+    expect(body).toMatchObject({ id: 7, level: 'gram' });
+    expect(body.profile.sarpanchName).toBeNull();
+    expect(body.profile.secretaryName).toBe('अनिल देशमुख');
+    expect(db.calls[0]!.sql).toMatch(/LEFT JOIN panchayat_profiles/);
+  });
+
+  it('returns 404 for an unknown panchayat', async () => {
+    const res = await buildApp({ db: fakeDb([]) }).request('/v1/panchayats/999', {}, testBindings);
+    expect(res.status).toBe(404);
+    const body = (await res.json()) as { error: { code: string } };
+    expect(body.error.code).toBe('NOT_FOUND');
+  });
+});

@@ -52,7 +52,7 @@ export interface PanchayatFinance {
 }
 
 interface SchemeRow extends Row {
-  scheme_id: number;
+  scheme_id: string;
   code: string;
   name_mr: string;
   name_en: string;
@@ -136,7 +136,7 @@ financeRouter.get(
     )) as ExpenditureFinanceRow[];
 
     const toScheme = (row: SchemeRow): Scheme => ({
-      id: row.scheme_id,
+      id: Number(row.scheme_id),
       lgdCode: String(row.scheme_id),
       code: row.code,
       nameMr: row.name_mr,
@@ -158,22 +158,24 @@ financeRouter.get(
 
     const byScheme = new Map<number, SchemeSummary>();
     for (const row of grantRows) {
-      const entry = byScheme.get(row.scheme_id) ?? {
+      const schemeId = Number(row.scheme_id);
+      const entry = byScheme.get(schemeId) ?? {
         scheme: toScheme(row),
         grants: 0,
         expenditure: 0,
       };
       entry.grants += Number(row.amount);
-      byScheme.set(row.scheme_id, entry);
+      byScheme.set(schemeId, entry);
     }
     for (const row of expenditureRows) {
-      const entry = byScheme.get(row.scheme_id) ?? {
+      const schemeId = Number(row.scheme_id);
+      const entry = byScheme.get(schemeId) ?? {
         scheme: toScheme(row),
         grants: 0,
         expenditure: 0,
       };
       entry.expenditure += Number(row.amount);
-      byScheme.set(row.scheme_id, entry);
+      byScheme.set(schemeId, entry);
     }
 
     const totalGrants = grants.reduce((sum, g) => sum + g.amount, 0);
