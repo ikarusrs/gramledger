@@ -15,8 +15,11 @@ official data.
 - **Partially supported:** eGramSwaraj profiles and finance. Public static
   reports exist, but the accessible report contract is HTML and commonly
   requires CAPTCHA/session POST flows for panchayat-level detail. The stable
-  public pages verified during this audit are primarily state/district summary
-  reports.
+  public pages verified during this audit include state/district summary
+  reports **and** the scheme-wise drill-down, whose "Village Wise Summary
+  Report" pages expose per-gram-panchayat receipt/payment rows over plain GET
+  links (`blockWiseSummaryReport.do` → `schemeWiseVillageReport.do`). Those rows
+  are now ingested into `scheme_expenditures`.
 - **Not established:** a reproducible, documented Meri Panchayat API for the
   governance data GramLedger needs. One public JSON endpoint was observed in
   the web application's JavaScript, but it is an application-internal JJM
@@ -71,11 +74,23 @@ Official portal: [egramswaraj.gov.in](https://egramswaraj.gov.in/)
 
 #### eGramSwaraj-specific findings
 
-**Do panchayat-level financial reports exist?** Yes, the planning dashboard links
-to panchayat-wise expenditure and activity reports, and forms expose state,
-district, block, and Gram Panchayat parameters. Their existence does not mean
-they are batch-extractable: the observed forms include CAPTCHA and session
-state, and client-side pages may load data after the initial HTML.
+**Do panchayat-level financial reports exist?** Yes. Beyond the planning
+dashboard's panchayat-wise expenditure/activity reports (which sit behind
+CAPTCHA/session state), the **scheme-wise expenditure** drill-down serves
+per-GP rows publicly over plain GET links:
+
+```text
+FileRedirect.jsp?FD=SchemeWiseExpenditureReport2025-2026/3287&name=3287.html  (scheme state page)
+  └─ .../3287//27&name=27.html                        (scheme district page)
+       └─ blockWiseSummaryReport.do?param=generate&…  (block page)
+            └─ schemeWiseVillageReport.do?…            (village page — one row per GP)
+```
+
+These pages were captured and the village page parsed into one scheme record per
+gram panchayat (e.g. 147 GPs under scheme 3287 in Akole block, Maharashtra) with
+fiscal-year `receipts`/`payments` and a denormalized scheme name (see
+`docs/scraper.md`). The R&P family (village-wise and GP monthly statements)
+already ingested into `financial_statements`.
 
 **Are report URLs deterministic?** Partly. Static reports follow patterns such
 as:
@@ -272,7 +287,7 @@ verified.
 | Panchayat profiles                      | **Partially supported**                | eGramSwaraj exposes profile reports/forms; stable CAPTCHA-free bulk extraction and field completeness are unverified.          |
 | Grants                                  | **Unsupported at planned granularity** | Existing table requires panchayat and scheme IDs; observed public eGram reports are summaries or protected detail flows.       |
 | Expenditure                             | **Partially supported**                | District/state summaries are public; panchayat-level normalized rows are not reliably extractable under the verified contract. |
-| Scheme-wise spending                    | **Partially supported**                | Scheme-wise state reports and scheme IDs are public; panchayat-level scheme rows are not established.                          |
+| Scheme-wise spending                    | **Partially supported**                | Scheme-wise drill-down pages expose per-GP receipt/payment rows over public GET links and are ingested into `scheme_expenditures`; the scheme NAME is stored denormalized because source-specific scheme identity/codes are unresolved. |
 | Financial charts                        | **Partially supported**                | Charts can use verified district/state aggregates, not the planned complete panchayat data.                                    |
 | Financial trends                        | **Partially supported**                | Multiple financial-year static reports exist, but availability and schema consistency vary by report/year.                     |
 | Panchayat comparison                    | **Unsupported as planned**             | Requires comparable panchayat-level finance with stable identity and complete coverage.                                        |
@@ -368,8 +383,10 @@ audit.
   Panchayat, and IMD.
 - A failed endpoint can look like an empty report. Parsers need minimum-row,
   header, and freshness checks before treating an empty result as valid.
-- The current eGramSwaraj implementation intentionally stops before a database
-  loader because this audit found no safe panchayat-level mapping contract.
+- The current eGramSwaraj implementation loads resolved rows into
+  `financial_statements` and `scheme_expenditures`; it intentionally avoids
+  `grants`, `expenditures`, `public_works`, and `assets` because this audit has
+  not established a safe scheme/works/asset identity mapping contract.
 
 ## Recommended Implementation Order
 
