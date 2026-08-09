@@ -27,3 +27,7 @@ export function notFound(message = 'Resource not found'): AppError {
 export function internalError(message = 'Internal server error'): AppError {
   return new AppError(500, 'INTERNAL_ERROR', message);
 }
+
+export function serviceUnavailable(message = 'Service unavailable'): AppError {
+  return new AppError(503, 'DB_UNAVAILABLE', message);
+}
