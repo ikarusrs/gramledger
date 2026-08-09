@@ -1,10 +1,11 @@
 import type { ETLRecord } from '../../src/core/types.js';
 
-export type EGramReportKind = 'monthly_statement' | 'village_statement';
+export type EGramReportKind = 'monthly_statement' | 'village_statement' | 'scheme_village';
 
-/** Report family this row came from; stored in `financial_statements.source`. */
+/** Report family this row came from; stored in `source`. */
 export const SOURCE_MONTHLY = 'egramswaraj_monthly';
 export const SOURCE_VILLAGE = 'egramswaraj_village';
+export const SOURCE_SCHEME = 'egramswaraj_scheme';
 
 export interface EGramSwarajConfig {
   baseUrl: string;
@@ -34,6 +35,8 @@ export interface EGramRecord extends ETLRecord {
   districtName?: string;
   blockName?: string;
   panchayatName?: string;
+  /** Scheme name for scheme-wise expirations. */
+  scheme?: string;
   openingBalance?: number;
   receipts?: number;
   receiptCancellation?: number;

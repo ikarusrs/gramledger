@@ -12,7 +12,10 @@ The source currently supports static HTML report pages such as:
 
 - `FileRedirect.jsp?FD=ExpenditureReportYYYY-YYYY/27&name=27.html`
 - `FileRedirect.jsp?FD=SummaryReportYYYY-YYYY/27&name=27.html`
-- scheme-wise expenditure report pages with the same generated-file pattern
+- scheme-wise expenditure pages: `FileRedirect.jsp?FD=SchemeWiseExpenditureReport…
+  &name=….html` (state/district) → `blockWiseSummaryReport.do` (block) →
+  `schemeWiseVillageReport.do` (per-GP village leaf), all plain-GET, no session
+  or CAPTCHA.
 
 Interactive profile, activity, works, asset, and detailed panchayat reports are
 not automated. They use CAPTCHA/session POST flows or client-side requests, and
@@ -28,11 +31,17 @@ contract.
 - `html.ts` parses tables by rows/cells rather than brittle CSS chains. Header
   text is normalized and links are ignored when extracting cell values.
 - `parser.ts` classifies report text and maps static report rows to typed records.
-  It emits diagnostics when financial years, report types, or data rows vanish.
+  Scheme-village pages yield one `scheme_village` record per GP row; aggregate
+  scheme levels are skipped with a diagnostic. It emits diagnostics when
+  financial years, report types, or data rows vanish.
 - `stages.ts` validates fiscal years and amounts, normalizes names/money, and
   deduplicates natural keys. The transformer retains only records with a future
   panchayat identity so summary rows cannot be misloaded as panchayat data.
-- `index.ts` wires the stages into `createPipeline` with an injected loader.
+- `index.ts` wires the stages into `createPipeline` and routes records to their
+  loader: R&P rows → `financial_statements`, scheme rows → `scheme_expenditures`
+  (`panchayat_id`, `fy`, `scheme` natural key; scheme names are stored
+  denormalized because source-specific scheme identity is unresolved — see
+  `docs/DATA_SOURCE_AUDIT.md`).
 
 ## Configuration
 
@@ -47,12 +56,13 @@ contract.
 
 ## Deferred loader decision
 
-No database loader is supplied yet. Loading district totals into
-`expenditures`, `grants`, `public_works`, or `assets` would violate their
-required `panchayat_id` relationships and produce false data. The pipeline
-therefore accepts a `Loader<EGramRecord>` dependency. Once an approved
-panchayat-level export/API is available, add resolvers for panchayat and scheme
-LGD codes and implement the loader without changing the parser stages.
+R&P records load into `financial_statements`; scheme per-GP rows load into
+`scheme_expenditures`. Loading district totals into `expenditures`, `grants`,
+`public_works`, or `assets` would violate their required `panchayat_id`
+relationships and produce false data — the parser skips aggregate levels instead.
+Scheme names are stored as published (denormalized); mapping them to the curated
+`schemes` catalog is deferred until source-specific scheme identity is resolved
+(see `docs/DATA_SOURCE_AUDIT.md`).
 
 ## Drift and maintenance
 

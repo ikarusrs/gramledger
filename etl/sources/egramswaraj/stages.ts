@@ -24,9 +24,10 @@ export const validate: Validator<EGramRecord> = async (
   const invalid: ValidationOutcome<EGramRecord>['invalid'] = [];
   for (const record of records) {
     const errors: string[] = [];
-    if (!['monthly_statement', 'village_statement'].includes(record.kind)) {
+    if (!['monthly_statement', 'village_statement', 'scheme_village'].includes(record.kind)) {
       errors.push(`kind ${record.kind} is not supported`);
     }
+    if (record.kind === 'scheme_village' && !record.scheme) errors.push('scheme is required');
     if (
       !Number.isInteger(record.financialYear) ||
       record.financialYear < 2000 ||
@@ -57,6 +58,7 @@ export const normalize: Normalizer<EGramRecord> = async (records) =>
     districtName: normalizeName(record.districtName),
     blockName: normalizeName(record.blockName),
     panchayatName: normalizeName(record.panchayatName),
+    scheme: normalizeName(record.scheme),
     period: record.period.trim(),
     openingBalance: roundMoney(record.openingBalance),
     receipts: roundMoney(record.receipts),
@@ -79,6 +81,7 @@ export const deduplicate: Deduplicator<EGramRecord> = async (records) => {
       record.districtName ?? '',
       record.blockName ?? '',
       record.panchayatName ?? '',
+      record.scheme ?? '',
     ].join('|');
     if (seen.has(key)) removed.push(record);
     else {

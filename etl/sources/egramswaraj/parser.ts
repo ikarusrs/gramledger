@@ -1,5 +1,6 @@
 import type { Parser } from '../../src/core/types.js';
 import {
+  cleanText,
   monthFromLabel,
   parseFinancialYear,
   parseMoney,
@@ -12,7 +13,7 @@ import type {
   EGramReportKind,
   ParseDiagnostics,
 } from './types.js';
-import { SOURCE_MONTHLY, SOURCE_VILLAGE } from './types.js';
+import { SOURCE_MONTHLY, SOURCE_SCHEME, SOURCE_VILLAGE } from './types.js';
 
 export interface ParseResult {
   records: EGramRecord[];
@@ -37,6 +38,21 @@ export function parseReport(envelope: EGramReportEnvelope): ParseResult {
       return parseMonthlyStatement(page.tables, financialYear, envelope.url);
     case 'village':
       return parseVillageStatement(page.tables, financialYear, envelope.url);
+    case 'scheme_state':
+    case 'scheme_district':
+    case 'scheme_block':
+      return {
+        records: [],
+        diagnostics: [
+          {
+            kind: 'skipped',
+            warnings: ['scheme aggregate report is not panchayat-level; skipped'],
+            ...baseDiag,
+          },
+        ],
+      };
+    case 'scheme_village':
+      return parseSchemeVillage(page.tables, financialYear, envelope.url, envelope.html);
     default:
       return {
         records: [],
@@ -213,6 +229,96 @@ function parseVillageStatement(
       },
     ],
   };
+}
+
+// ---------------------------------------------------------------------------
+// Scheme-wise village statement (per-GP rows under one scheme)
+// ---------------------------------------------------------------------------
+
+function parseSchemeVillage(
+  tables: HtmlTable[],
+  financialYear: number,
+  sourceUrl: string,
+  html: string,
+): ParseResult {
+  const diagBase = { kind: 'scheme_village' as const, tablesSeen: tables.length };
+  const data = findTable(tables, (row) => row.length >= 7 && /[0-9]/.test(row[5] ?? ''));
+  if (!data) {
+    return {
+      records: [],
+      diagnostics: [{ ...diagBase, warnings: ['scheme village table not found'], rowsSeen: 0 }],
+    };
+  }
+  const labels = pageLabels(html);
+  const scheme = labels.get('scheme') ?? extractScheme(cleanText(html));
+  if (!scheme) {
+    return {
+      records: [],
+      diagnostics: [{ ...diagBase, warnings: ['scheme name not found'], rowsSeen: 0 }],
+    };
+  }
+  const identity = {
+    stateName: labels.get('state'),
+    districtName: labels.get('zilla panchayat') ?? labels.get('district'),
+    blockName: labels.get('block panchayat'),
+  };
+  const records: EGramRecord[] = [];
+  data.rows.forEach((row, index) => {
+    const name = row[0]?.trim();
+    if (
+      row.length < 7 ||
+      !name ||
+      isHeaderOrNav(name) ||
+      /^(rv|pv|cv|jv)$/i.test(name) ||
+      /receipts?|payments?/i.test(name) ||
+      /^total$/i.test(name) ||
+      /village panchayat|grand total/i.test(name)
+    ) {
+      return;
+    }
+    const base = {
+      kind: 'scheme_village' as EGramReportKind,
+      source: SOURCE_SCHEME,
+      financialYear,
+      period: 'total',
+      scheme,
+      sourceUrl,
+      sourceHash: `${sourceUrl}#${index}`,
+      ...identity,
+      panchayatName: name,
+      raw: Object.fromEntries(row.map((cell, i) => [String(i), cell])),
+    };
+    records.push({
+      ...base,
+      receipts: parseMoney(row[5]),
+      payments: parseMoney(row[6]),
+    });
+  });
+  return {
+    records,
+    diagnostics: [
+      {
+        ...diagBase,
+        warnings: records.length === 0 ? ['scheme village had no data rows'] : [],
+        rowsSeen: records.length,
+      },
+    ],
+  };
+}
+
+/** Pulls the `<label>key : value</label>` header values (scheme pages). */
+function pageLabels(html: string): Map<string, string> {
+  const labels = new Map<string, string>();
+  for (const match of html.matchAll(/<label[^>]*>\s*([^<]+?)\s*<\/label>/gi)) {
+    const [key, value] = (match[1] ?? '').split(':', 2).map((part) => cleanText(part));
+    if (key && value) labels.set(key.toLowerCase(), value);
+  }
+  return labels;
+}
+
+function extractScheme(text: string): string | undefined {
+  const match = /scheme\s*:\s*([a-z0-9& ()'-]+)/i.exec(text);
+  return match?.[1]?.trim() || undefined;
 }
 
 // ---------------------------------------------------------------------------

@@ -7,7 +7,16 @@ import { parse, type HTMLElement } from 'node-html-parser';
  * accurate matrix with no manual rowspan/colspan expansion needed.
  */
 
-export type ReportLevel = 'district' | 'block' | 'village' | 'monthly' | 'unknown';
+export type ReportLevel =
+  | 'district'
+  | 'block'
+  | 'village'
+  | 'monthly'
+  | 'scheme_state'
+  | 'scheme_district'
+  | 'scheme_block'
+  | 'scheme_village'
+  | 'unknown';
 
 export interface HtmlTable {
   headers: string[];
@@ -58,11 +67,25 @@ function extractTable(table: HTMLElement): HtmlTable {
 }
 
 export function detectLevel(text: string): ReportLevel {
+  if (isSchemeReport(text)) {
+    if (/village wise summary report/i.test(text)) return 'scheme_village';
+    if (/block wise summary report/i.test(text)) return 'scheme_block';
+    if (/district wise summary report/i.test(text)) return 'scheme_district';
+    if (/state wise/i.test(text)) return 'scheme_state';
+    if (/village wise (receipt|payment)/i.test(text)) return 'scheme_village';
+    if (/district wise (receipt|payment)/i.test(text)) return 'scheme_district';
+    return 'scheme_block';
+  }
   if (/month wise payment and receipt statement/i.test(text)) return 'monthly';
   if (/district wise receipt and payment statement/i.test(text)) return 'district';
   if (/block wise receipt and payment statement/i.test(text)) return 'block';
   if (/village wise receipt and payment statement/i.test(text)) return 'village';
   return 'unknown';
+}
+
+/** Scheme-wise reports carry an inline `Scheme :`/`Scheme:-` header the R&P family lacks. */
+function isSchemeReport(text: string): boolean {
+  return /scheme\s*[:-]\s*-?[a-z0-9]/i.test(text);
 }
 
 /** Fiscal-year month number (April = 1 … March = 12), tolerating label typos. */

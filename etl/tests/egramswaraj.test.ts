@@ -19,7 +19,7 @@ import {
   parseMoney,
 } from '../sources/egramswaraj/html.js';
 import type { EGramSwarajConfig } from '../sources/egramswaraj/types.js';
-import { SOURCE_MONTHLY, SOURCE_VILLAGE } from '../sources/egramswaraj/types.js';
+import { SOURCE_MONTHLY, SOURCE_SCHEME, SOURCE_VILLAGE } from '../sources/egramswaraj/types.js';
 import type { IdentityResolver } from '../sources/egramswaraj/resolver.js';
 import { memoryAudit, memoryDeadLetter, testConfig, testCtx } from './helpers.js';
 
@@ -58,6 +58,13 @@ describe('HTML helpers', () => {
     expect(detectLevel(fixture('district-report.html'))).toBe('block');
     expect(detectLevel(fixture('state-report.html'))).toBe('district');
     expect(detectLevel('<html></html>')).toBe('unknown');
+  });
+
+  it('classifies scheme-wise report pages by level', () => {
+    expect(detectLevel(fixture('scheme-state.html'))).toBe('scheme_state');
+    expect(detectLevel(fixture('scheme-district.html'))).toBe('scheme_district');
+    expect(detectLevel(fixture('scheme-block.html'))).toBe('scheme_block');
+    expect(detectLevel(fixture('scheme-village.html'))).toBe('scheme_village');
   });
 
   it('parses fiscal-year month labels including typos', () => {
@@ -123,6 +130,39 @@ describe('eGramSwaraj parser', () => {
     expect(parseReport(envelope(fixture('district-report.html'))).records).toHaveLength(0);
   });
 
+  it('parses a scheme village statement into one record per GP', () => {
+    const result = parseReport(envelope(fixture('scheme-village.html')));
+    expect(result.diagnostics[0]?.warnings).toEqual([]);
+    expect(result.records).toHaveLength(147);
+    const first = result.records[0];
+    expect(first).toMatchObject({
+      kind: 'scheme_village',
+      source: SOURCE_SCHEME,
+      financialYear: 2025,
+      period: 'total',
+      scheme: 'XV Finance Commission--XVFC',
+      stateName: 'Maharashtra',
+      districtName: 'Ahilyanagar',
+      blockName: 'Akole',
+      panchayatName: 'Ambad',
+      receipts: 3542718.92,
+      payments: 1054083,
+    });
+    expect(result.records.some((r) => r.panchayatName === 'Total')).toBe(false);
+    expect(result.records.some((r) => r.panchayatName === 'Ambitkhind')).toBe(true);
+  });
+
+  it('skips scheme aggregate reports below village level', () => {
+    for (const name of ['scheme-state.html', 'scheme-district.html', 'scheme-block.html']) {
+      const result = parseReport(envelope(fixture(name)));
+      expect(result.records).toHaveLength(0);
+      expect(result.diagnostics[0]?.kind).toBe('skipped');
+      expect(result.diagnostics[0]?.warnings).toContain(
+        'scheme aggregate report is not panchayat-level; skipped',
+      );
+    }
+  });
+
   it('reports drift when the financial year disappears', () => {
     const result = parseReport(
       envelope('<html><body><table><tr><td>unexpected</td></tr></table></body></html>'),
@@ -151,6 +191,30 @@ describe('eGramSwaraj stages', () => {
     const { kept, removed } = await deduplicate([record, { ...record }], testCtx('deduplicate'));
     expect(kept).toHaveLength(1);
     expect(removed).toHaveLength(1);
+  });
+
+  it('validates scheme records and rejects missing scheme/panchayat', async () => {
+    const [record] = parseReport(envelope(fixture('scheme-village.html'))).records;
+    const ok = await validate([record!], testCtx('validate'));
+    expect(ok.valid).toHaveLength(1);
+
+    const bad = await validate([{ ...record!, scheme: undefined }], testCtx('validate'));
+    expect(bad.invalid[0]?.errors).toContain('scheme is required');
+
+    const anonymous = await validate(
+      [{ ...record!, panchayatName: undefined }],
+      testCtx('validate'),
+    );
+    expect(anonymous.invalid[0]?.errors).toContain('panchayatName is required');
+  });
+
+  it('normalizes scheme names', async () => {
+    const record = {
+      ...parseReport(envelope(fixture('scheme-village.html'))).records[0]!,
+      scheme: '  XV Finance Commission--XVFC  ',
+    };
+    const [normalized] = await normalize([record], testCtx('normalize'));
+    expect(normalized?.scheme).toBe('XV Finance Commission--XVFC');
   });
 
   it('normalizes names and money precision', async () => {
@@ -384,5 +448,54 @@ describe('pipeline', () => {
     expect(report.counts.rowsSeen).toBe(14);
     expect(report.counts.rowsUpserted).toBe(0);
     expect(report.counts.rowsSkipped).toBe(14);
+  });
+
+  it('upserts scheme expenditures into their own table', async () => {
+    const fetchFn: typeof fetch = async () =>
+      new Response(fixture('scheme-village.html'), { status: 200 });
+
+    const queries: { sql: string; params: unknown[] }[] = [];
+    const pool = {
+      query: async (sql: string, params: unknown[]) => {
+        queries.push({ sql, params });
+        const columns = sql.includes('INSERT INTO scheme_expenditures') ? 8 : 11;
+        return { rows: [], rowCount: sql.includes('INSERT') ? params.length / columns : 0 };
+      },
+    } as never;
+
+    const resolve: IdentityResolver = {
+      resolve: async () => ({ districtId: 1, talukaId: 2, panchayatId: 3 }),
+    };
+    const deadLetter = memoryDeadLetter();
+    const pipeline = buildEGramSwarajPipeline({
+      sourceConfig: sourceConfig({ reportUrls: ['scheme.html'], maxPages: 1 }),
+      pool,
+      resolve,
+      fetch: { fetchFn, sleep: async () => {} },
+      pipeline: { config: testConfig({ batchSize: 100 }), deadLetter: deadLetter.sink },
+    });
+
+    const report = await pipeline.run();
+    expect(report.status).toBe('success');
+    expect(report.counts).toMatchObject({ rowsSeen: 147, rowsUpserted: 147 });
+
+    const loadQueries = queries.filter((q) => q.sql.includes('INSERT INTO scheme_expenditures'));
+    expect(loadQueries).not.toHaveLength(0);
+    expect(loadQueries[0]!.sql).toContain(
+      'ON CONFLICT (panchayat_id, fy, scheme, source) DO UPDATE',
+    );
+    expect(loadQueries.reduce((sum, q) => sum + q.params.length, 0)).toBe(147 * 8);
+    expect(loadQueries[0]!.params.slice(0, 8)).toEqual([
+      3,
+      2025,
+      'XV Finance Commission--XVFC',
+      3542718.92,
+      1054083,
+      SOURCE_SCHEME,
+      'https://egramswaraj.gov.in/scheme.html',
+      'https://egramswaraj.gov.in/scheme.html#2',
+    ]);
+    expect(queries.some((q) => q.sql.includes('INSERT INTO financial_statements'))).toBe(false);
+    expect(deadLetter.items).toHaveLength(0);
   });
 });

@@ -4,7 +4,7 @@ import {
   type PipelineDeps,
   type PipelineStages,
 } from '../../src/core/pipeline.js';
-import type { Config } from '../../src/core/types.js';
+import type { Config, Loader, LoadResult } from '../../src/core/types.js';
 import { ETLError } from '../../src/core/errors.js';
 import {
   createPostgresAuditSink,
@@ -38,6 +38,22 @@ export const FINANCIAL_STATEMENTS_COLUMNS = [
   'source',
 ] as const;
 
+export const SCHEME_EXPENDITURES_TABLE = 'scheme_expenditures';
+
+/** Natural key of `scheme_expenditures` (see the migration). */
+export const SCHEME_EXPENDITURES_KEY = ['panchayat_id', 'fy', 'scheme', 'source'] as const;
+
+export const SCHEME_EXPENDITURES_COLUMNS = [
+  'panchayat_id',
+  'fy',
+  'scheme',
+  'receipts',
+  'payments',
+  'source',
+  'source_url',
+  'source_hash',
+] as const;
+
 export interface EGramPipelineDeps {
   sourceConfig: EGramSwarajConfig;
   pipeline: PipelineDeps;
@@ -53,6 +69,67 @@ export function buildEGramSwarajPipeline(deps: EGramPipelineDeps): Pipeline {
   const { pool } = deps;
   const resolve = deps.resolve ?? createIdentityResolver(pool);
 
+  const financialLoader = createUpsertLoader<EGramRecord>({
+    pool,
+    table: FINANCIAL_STATEMENTS_TABLE,
+    conflictColumns: [...FINANCIAL_STATEMENTS_KEY],
+    columns: [...FINANCIAL_STATEMENTS_COLUMNS],
+    map: (record) => {
+      if (record.panchayatId === undefined) {
+        throw new ETLError('LOAD_ERROR', 'valid record is missing panchayatId');
+      }
+      return {
+        panchayat_id: record.panchayatId,
+        fy: record.financialYear,
+        period: record.period,
+        month_no: record.monthNo ?? null,
+        receipts: record.receipts ?? 0,
+        receipt_cancellation: record.receiptCancellation ?? 0,
+        ob_cancellation: record.obCancellation ?? 0,
+        payments: record.payments ?? 0,
+        payment_cancellation: record.paymentCancellation ?? 0,
+        opening_balance: record.openingBalance ?? null,
+        source: record.source,
+      };
+    },
+  });
+
+  const schemeLoader = createUpsertLoader<EGramRecord>({
+    pool,
+    table: SCHEME_EXPENDITURES_TABLE,
+    conflictColumns: [...SCHEME_EXPENDITURES_KEY],
+    columns: [...SCHEME_EXPENDITURES_COLUMNS],
+    map: (record) => {
+      if (record.panchayatId === undefined) {
+        throw new ETLError('LOAD_ERROR', 'valid record is missing panchayatId');
+      }
+      return {
+        panchayat_id: record.panchayatId,
+        fy: record.financialYear,
+        scheme: record.scheme ?? '',
+        receipts: record.receipts ?? 0,
+        payments: record.payments ?? 0,
+        source: record.source,
+        source_url: record.sourceUrl,
+        source_hash: record.sourceHash,
+      };
+    },
+  });
+
+  const load: Loader<EGramRecord> = async (records, ctx) => {
+    const financials = records.filter((r) => r.kind !== 'scheme_village');
+    const schemes = records.filter((r) => r.kind === 'scheme_village');
+    const results = [await financialLoader(financials, ctx), await schemeLoader(schemes, ctx)];
+    return results.reduce<LoadResult>(
+      (acc, r) => ({
+        upserted: acc.upserted + (r.upserted ?? 0),
+        inserted: (acc.inserted ?? 0) + (r.inserted ?? 0),
+        updated: (acc.updated ?? 0) + (r.updated ?? 0),
+      }),
+      { upserted: 0, inserted: 0, updated: 0 },
+    );
+  };
+
   const stages: PipelineStages<EGramRecord> = {
     fetch: createEGramSwarajFetcher(deps.sourceConfig, deps.fetch),
     parse: parseContent,
@@ -60,30 +137,7 @@ export function buildEGramSwarajPipeline(deps: EGramPipelineDeps): Pipeline {
     normalize,
     deduplicate,
     transform: createResolvingTransform(resolve),
-    load: createUpsertLoader<EGramRecord>({
-      pool,
-      table: FINANCIAL_STATEMENTS_TABLE,
-      conflictColumns: [...FINANCIAL_STATEMENTS_KEY],
-      columns: [...FINANCIAL_STATEMENTS_COLUMNS],
-      map: (record) => {
-        if (record.panchayatId === undefined) {
-          throw new ETLError('LOAD_ERROR', 'valid record is missing panchayatId');
-        }
-        return {
-          panchayat_id: record.panchayatId,
-          fy: record.financialYear,
-          period: record.period,
-          month_no: record.monthNo ?? null,
-          receipts: record.receipts ?? 0,
-          receipt_cancellation: record.receiptCancellation ?? 0,
-          ob_cancellation: record.obCancellation ?? 0,
-          payments: record.payments ?? 0,
-          payment_cancellation: record.paymentCancellation ?? 0,
-          opening_balance: record.openingBalance ?? null,
-          source: record.source,
-        };
-      },
-    }),
+    load,
   };
 
   return createPipeline('egramswaraj', stages, deps.pipeline);

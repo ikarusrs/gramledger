@@ -14,16 +14,19 @@ interface FetchState {
 }
 
 /**
- * BFS crawl of the eGramSwaraj "Receipt and Payment" report family:
+ * BFS crawl of the eGramSwaraj report families:
  *
- *   state (District wise) → district (Block wise) → block (Village wise) → GP
- *   ("Month Wise Payment and Receipt Statement").
+ *   R&P: state (District wise) → district (Block wise) → block (Village wise)
+ *        → GP ("Month Wise Payment and Receipt Statement").
+ *   Scheme-wise: scheme state → scheme district → block (`blockWiseSummaryReport.do`)
+ *        → village (`schemeWiseVillageReport.do`, per-GP leaf rows).
  *
- * Each level page links to the next level via `FileRedirect.jsp` URLs; GP
- * statements are leaves. Fetches are rate-limited (`minIntervalMs`), carry a
- * transparent user agent, and reuse any session cookie. Bounded by
- * `maxPages`. Non-retryable page failures are skipped with a warning; a
- * retryable failure aborts so the pipeline's fetch retry re-runs the crawl.
+ * Each level page links to the next via `FileRedirect.jsp` URLs (R&P) or
+ * `.do` pages (scheme); GP statements and scheme village pages are leaves.
+ * Fetches are rate-limited (`minIntervalMs`), carry a transparent user agent,
+ * and reuse any session cookie. Bounded by `maxPages`. Non-retryable page
+ * failures are skipped with a warning; a retryable failure aborts so the
+ * pipeline's fetch retry re-runs the crawl.
  */
 export function createEGramSwarajFetcher(
   config: EGramSwarajConfig,
@@ -73,13 +76,48 @@ export function createEGramSwarajFetcher(
 }
 
 function childLinks(parentUrl: string, html: string, level: ReportLevel): string[] {
-  if (level === 'monthly' || level === 'unknown') return [];
+  if (level === 'monthly' || level === 'scheme_village' || level === 'unknown') return [];
   const { tables } = parsePage(html);
   const hrefs = [...new Set(tables.flatMap((table) => table.links.flat()))];
-  const pattern = level === 'village' ? /FD=ExpFY/i : /FD=ExpenditureReport/i;
-  return hrefs
-    .filter((href) => href.startsWith('FileRedirect.jsp') && pattern.test(href))
-    .map((href) => new URL(href, parentUrl).toString());
+  const clean = (href: string) => href.replace(/\s+/g, '');
+  const asUrl = (href: string) => {
+    try {
+      return new URL(clean(href), parentUrl).toString();
+    } catch {
+      return undefined;
+    }
+  };
+  let pattern: RegExp;
+  let relative: RegExp | undefined;
+  switch (level) {
+    case 'scheme_state':
+      pattern = /FD=SchemeWiseExpenditureReport/i;
+      break;
+    case 'scheme_district':
+      relative = /^blockWiseSummaryReport\.do/i;
+      pattern = /^$/;
+      break;
+    case 'scheme_block':
+      relative = /^schemeWiseVillageReport\.do/i;
+      pattern = /^$/;
+      break;
+    case 'village':
+      pattern = /FD=ExpFY/i;
+      break;
+    default:
+      pattern = /FD=ExpenditureReport/i;
+  }
+  const out: string[] = [];
+  for (const href of hrefs) {
+    const cleaned = clean(href);
+    const keep = relative
+      ? relative.test(cleaned)
+      : href.startsWith('FileRedirect.jsp') && pattern.test(href);
+    if (!keep) continue;
+    const url = asUrl(href);
+    if (url) out.push(url);
+  }
+  return out;
 }
 
 async function fetchOne(
