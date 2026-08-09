@@ -20,6 +20,7 @@ logs/
 !.env.test.example
 .dev.vars
 *.dev.vars
+keys.txt
 *.pem
 *.key
 

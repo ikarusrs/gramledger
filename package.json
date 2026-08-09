@@ -25,6 +25,7 @@
     "db:seed": "npm --workspace database run seed",
     "dev:api": "npm --workspace apps/api run dev",
     "dev:web": "npm --workspace apps/web run dev",
+    "dev": "bash scripts/dev.sh",
     "etl:run": "npm --workspace etl run run --"
   },
   "devDependencies": {
