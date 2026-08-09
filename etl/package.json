@@ -12,7 +12,8 @@
     "format:check": "prettier --check --ignore-unknown \"src/**/*.ts\" \"sources/**/*.ts\" \"tests/**/*.ts\" \"*.{ts,json,mjs}\"",
     "test": "vitest run",
     "test:watch": "vitest",
-    "build": "tsc --noEmit"
+    "build": "tsc --noEmit",
+    "run": "tsx src/cli.ts"
   },
   "dependencies": {
     "node-html-parser": "^9.0.1",
@@ -22,6 +23,7 @@
     "@types/node": "^22.0.0",
     "@types/pg": "^8.15.0",
     "eslint": "^9.0.0",
+    "tsx": "^4.23.11",
     "typescript": "^5.7.0",
     "typescript-eslint": "^8.0.0",
     "vitest": "^3.0.0"

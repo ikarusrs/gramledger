@@ -1,0 +1,51 @@
+name: ETL
+
+on:
+  schedule:
+    - cron: '0 2 * * *'
+  workflow_dispatch:
+    inputs:
+      source:
+        description: ETL source to run
+        required: true
+        default: lgd
+        type: choice
+        options:
+          - lgd
+          - data_gov_in
+          - egramswaraj
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    concurrency:
+      group: etl-${{ github.event.inputs.source || 'lgd' }}
+    env:
+      DATABASE_URL: ${{ secrets.DATABASE_URL }}
+      ETL_SOURCE: ${{ github.event.inputs.source || 'lgd' }}
+      ETL_LGD_RESOURCE_ID: ${{ secrets.ETL_LGD_RESOURCE_ID }}
+      ETL_DGI_API_KEY: ${{ secrets.ETL_DGI_API_KEY }}
+      ETL_EGS_CONTACT_EMAIL: ${{ secrets.ETL_EGS_CONTACT_EMAIL }}
+      SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci
+      - name: Migrate
+        run: npm run db:migrate
+      - name: Run source
+        id: run
+        run: npm run etl:run
+      - name: Alert on failure
+        if: ${{ failure() }}
+        run: |
+          if [ -n "$SLACK_WEBHOOK_URL" ]; then
+            curl -s -X POST -H 'Content-Type: application/json' \
+              -d "{\"text\":\"GramLedger ETL \`${ETL_SOURCE}\` failed (see run ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})\"}" \
+              "$SLACK_WEBHOOK_URL"
+          else
+            echo "no SLACK_WEBHOOK_URL set; skipping alert"
+          fi

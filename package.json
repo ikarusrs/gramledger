@@ -24,7 +24,8 @@
     "db:migrate:test": "npm --workspace database run migrate:test",
     "db:seed": "npm --workspace database run seed",
     "dev:api": "npm --workspace apps/api run dev",
-    "dev:web": "npm --workspace apps/web run dev"
+    "dev:web": "npm --workspace apps/web run dev",
+    "etl:run": "npm --workspace etl run run --"
   },
   "devDependencies": {
     "prettier": "^3.6.2"
