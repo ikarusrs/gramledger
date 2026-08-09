@@ -21,3 +21,5 @@ export { createPool, createPostgresAuditSink, createUpsertLoader } from './sinks
 export type { PostgresAuditSinkOptions, UpsertLoaderOptions } from './sinks/postgres.js';
 export { FileDeadLetterSink, NullDeadLetterSink } from './sinks/dead-letter.js';
 export type { FileDeadLetterSinkOptions } from './sinks/dead-letter.js';
+export { createSnapshotSink, FileObjectStore } from './sinks/snapshot.js';
+export type { ObjectStore, SnapshotSink, SnapshotSinkOptions } from './sinks/snapshot.js';
