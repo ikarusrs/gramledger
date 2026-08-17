@@ -13,42 +13,13 @@ describe('GET /v1/panchayats/:id/finance', () => {
         queryCount++;
         if (sql.includes('WHERE id =')) return [{ id: 1 }];
         if (sql.includes('SELECT fy FROM')) return [{ fy: 2026 }, { fy: 2025 }];
-        if (sql.includes('FROM grants')) {
+        if (sql.includes('FROM scheme_expenditures')) {
           return [
-            {
-              scheme_id: 5,
-              code: 'MNREGA',
-              name_mr: 'मनरेगा',
-              name_en: 'NREGA',
-              ministry: 'RD',
-              amount: 100.5,
-              source: 'egramswaraj',
-              disbursed_at: '2025-06-01',
-            },
+            { scheme: 'NREGA', source: 'egramswaraj_scheme', receipts: 100.5, payments: 10 },
+            { scheme: '15th FC', source: 'egramswaraj_scheme', receipts: 0, payments: 25 },
           ];
         }
-        if (sql.includes('FROM expenditures')) {
-          return [
-            {
-              scheme_id: 6,
-              code: '15FC',
-              name_mr: 'पंंच',
-              name_en: 'FC',
-              ministry: null,
-              head: 'Materials',
-              amount: 25,
-            },
-            {
-              scheme_id: 5,
-              code: 'a',
-              name_mr: 'm',
-              name_en: 'a',
-              ministry: 'RD',
-              head: 'Wages',
-              amount: 10,
-            },
-          ];
-        }
+        if (sql.includes('FROM financial_statements')) return [];
         return [];
       },
     };
@@ -66,8 +37,8 @@ describe('GET /v1/panchayats/:id/finance', () => {
         totalGrants: number;
         totalExpenditure: number;
         balance: number;
-        grants: { amount: number; scheme: { id: number } }[];
-        expenditures: { amount: number; head: string }[];
+        grants: { amount: number; source: string; scheme: { id: number; nameEn: string } }[];
+        expenditures: { amount: number; head: string; scheme: { nameEn: string } }[];
         byScheme: { grants: number; expenditure: number }[];
       };
     };
@@ -79,12 +50,20 @@ describe('GET /v1/panchayats/:id/finance', () => {
     expect(body.summary.balance).toBe(65.5);
     expect(body.summary.grants).toHaveLength(1);
     expect(body.summary.grants[0]?.amount).toBe(100.5);
+    expect(body.summary.grants[0]?.source).toBe('egramswaraj_scheme');
+    expect(body.summary.grants[0]?.scheme.nameEn).toBe('NREGA');
     expect(body.summary.expenditures).toHaveLength(2);
+    expect(body.summary.expenditures).toEqual(
+      expect.arrayContaining([
+        { amount: 10, head: '', scheme: expect.objectContaining({ nameEn: 'NREGA' }) },
+        { amount: 25, head: '', scheme: expect.objectContaining({ nameEn: '15th FC' }) },
+      ]),
+    );
     expect(body.summary.byScheme).toHaveLength(2);
     const byScheme = body.summary.byScheme;
     const nrega = byScheme.find((s) => s.grants > 0);
     expect(nrega?.expenditure).toBe(10);
-    expect(queryCount).toBe(4);
+    expect(queryCount).toBe(3);
   });
 
   it('defaults fy to the most recent available and computes zero totals when empty', async () => {
@@ -92,8 +71,7 @@ describe('GET /v1/panchayats/:id/finance', () => {
       async query(sql, _params = []) {
         if (sql.includes('WHERE id =')) return [{ id: 1 }];
         if (sql.includes('SELECT fy FROM')) return [{ fy: 3004 }, { fy: 400 }];
-        if (sql.includes('FROM grants')) return [];
-        if (sql.includes('FROM expenditures')) return [];
+        if (sql.includes('FROM scheme_expenditures')) return [];
         return [];
       },
     };
@@ -102,6 +80,27 @@ describe('GET /v1/panchayats/:id/finance', () => {
     const body = (await res.json()) as { fy: string; summary: { balance: number } };
     expect(body.fy).toBe('3004');
     expect(body.summary.balance).toBe(0);
+  });
+
+  it('falls back to the statement opening balance when no scheme data exists', async () => {
+    const db: Db = {
+      async query(sql, _params = []) {
+        if (sql.includes('WHERE id =')) return [{ id: 1 }];
+        if (sql.includes('SELECT fy FROM')) return [{ fy: 2026 }];
+        if (sql.includes('FROM scheme_expenditures')) return [];
+        if (sql.includes('FROM financial_statements')) return [{ opening_balance: 500 }];
+        return [];
+      },
+    };
+
+    const res = await buildApp({ db }).request(
+      '/v1/panchayats/1/finance?fy=2026',
+      {},
+      testBindings,
+    );
+    expect(res.status).toBe(200);
+    const body = (await res.json()) as { summary: { balance: number } };
+    expect(body.summary.balance).toBe(500);
   });
 
   it('returns 404 for an unknown panchayat', async () => {

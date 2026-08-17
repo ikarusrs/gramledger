@@ -51,23 +51,49 @@ export interface PanchayatFinance {
   summary: FinanceSummary;
 }
 
-interface SchemeRow extends Row {
-  scheme_id: string;
-  code: string;
-  name_mr: string;
-  name_en: string;
-  ministry: string | null;
-}
-
-interface GrantFinanceRow extends SchemeRow {
-  amount: number;
+interface SchemeExpenditureRow extends Row {
+  scheme: string;
   source: string;
-  disbursed_at: string | null;
+  receipts: number;
+  payments: number;
 }
 
-interface ExpenditureFinanceRow extends SchemeRow {
-  head: string;
-  amount: number;
+interface StatementRow extends Row {
+  opening_balance: number | null;
+}
+
+/**
+ * Synthesizes the API `Scheme` from the denormalized scheme text stored in
+ * `scheme_expenditures`. Source schemes have no LGD code or curated identity,
+ * so `id`/`lgdCode` come from a stable hash of the scheme name and both name
+ * fields carry the source text (English-only until the scheme catalog exists).
+ */
+function synthesizeScheme(scheme: string): Scheme {
+  const hash = fnv1a(scheme);
+  let slug = scheme
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '');
+  if (slug.length === 0) slug = 'scheme';
+  if (slug.length > 32) slug = slug.slice(0, 32);
+  return {
+    id: hash,
+    lgdCode: String(hash),
+    code: `${slug}-${hash.toString(16)}`,
+    nameMr: scheme,
+    nameEn: scheme,
+    ministry: null,
+  };
+}
+
+/** FNV-1a 32-bit hash; stable across runs and processes. */
+function fnv1a(text: string): number {
+  let hash = 0x811c9dc5;
+  for (let i = 0; i < text.length; i++) {
+    hash ^= text.charCodeAt(i);
+    hash = Math.imul(hash, 0x01000193);
+  }
+  return hash >>> 0;
 }
 
 const financeParams = z.object({
@@ -86,11 +112,27 @@ function currentFy(): number {
 
 const AVAILABLE_FYS_SQL = `
   SELECT fy FROM (
-    SELECT fy FROM grants WHERE panchayat_id = $1
+    SELECT fy FROM scheme_expenditures WHERE panchayat_id = $1
     UNION
-    SELECT fy FROM expenditures WHERE panchayat_id = $1
+    SELECT fy FROM financial_statements WHERE panchayat_id = $1
   ) f
   ORDER BY fy DESC
+`;
+
+const SCHEME_EXPENDITURES_SQL = `
+  SELECT scheme, source, SUM(receipts) AS receipts, SUM(payments) AS payments
+  FROM scheme_expenditures
+  WHERE panchayat_id = $1 AND fy = $2
+  GROUP BY scheme, source
+  ORDER BY scheme, source
+`;
+
+const OPENING_BALANCE_SQL = `
+  SELECT opening_balance
+  FROM financial_statements
+  WHERE panchayat_id = $1 AND fy = $2 AND opening_balance IS NOT NULL
+  ORDER BY month_no ASC NULLS FIRST
+  LIMIT 1
 `;
 
 export const financeRouter = new Hono<AppEnv>();
@@ -113,73 +155,55 @@ financeRouter.get(
     const availableFys = fyRows.map((r) => r.fy);
     const fy = requestedFy ?? availableFys[0] ?? currentFy();
 
-    const grantRows = (await db.query(
-      `SELECT
-         s.id AS scheme_id, s.code, s.name_mr, s.name_en, s.ministry,
-         g.amount, g.source, g.disbursed_at
-       FROM grants g
-       JOIN schemes s ON s.id = g.scheme_id
-       WHERE g.panchayat_id = $1 AND g.fy = $2
-       ORDER BY s.name_en`,
-      [id, fy],
-    )) as GrantFinanceRow[];
+    const schemeRows = (await db.query(SCHEME_EXPENDITURES_SQL, [
+      id,
+      fy,
+    ])) as SchemeExpenditureRow[];
 
-    const expenditureRows = (await db.query(
-      `SELECT
-         s.id AS scheme_id, s.code, s.name_mr, s.name_en, s.ministry,
-         e.head, e.amount
-       FROM expenditures e
-       JOIN schemes s ON s.id = e.scheme_id
-       WHERE e.panchayat_id = $1 AND e.fy = $2
-       ORDER BY s.name_en, e.head`,
-      [id, fy],
-    )) as ExpenditureFinanceRow[];
+    const toScheme = (scheme: string): Scheme => synthesizeScheme(scheme);
 
-    const toScheme = (row: SchemeRow): Scheme => ({
-      id: Number(row.scheme_id),
-      lgdCode: String(row.scheme_id),
-      code: row.code,
-      nameMr: row.name_mr,
-      nameEn: row.name_en,
-      ministry: row.ministry,
-    });
-
-    const grants: GrantRow[] = grantRows.map((row) => ({
-      scheme: toScheme(row),
-      amount: Number(row.amount),
-      source: row.source,
-      disbursedAt: row.disbursed_at,
-    }));
-    const expenditures: ExpenditureRow[] = expenditureRows.map((row) => ({
-      scheme: toScheme(row),
-      head: row.head,
-      amount: Number(row.amount),
-    }));
+    const grants: GrantRow[] = schemeRows
+      .filter((row) => Number(row.receipts) > 0)
+      .map((row) => ({
+        scheme: toScheme(row.scheme),
+        amount: Number(row.receipts),
+        source: row.source,
+        disbursedAt: null,
+      }));
+    const expenditures: ExpenditureRow[] = schemeRows
+      .filter((row) => Number(row.payments) > 0)
+      .map((row) => ({
+        scheme: toScheme(row.scheme),
+        head: '',
+        amount: Number(row.payments),
+      }));
 
     const byScheme = new Map<number, SchemeSummary>();
-    for (const row of grantRows) {
-      const schemeId = Number(row.scheme_id);
-      const entry = byScheme.get(schemeId) ?? {
-        scheme: toScheme(row),
+    for (const row of schemeRows) {
+      const scheme = row.scheme;
+      const entry = byScheme.get(fnv1a(scheme)) ?? {
+        scheme: toScheme(scheme),
         grants: 0,
         expenditure: 0,
       };
-      entry.grants += Number(row.amount);
-      byScheme.set(schemeId, entry);
-    }
-    for (const row of expenditureRows) {
-      const schemeId = Number(row.scheme_id);
-      const entry = byScheme.get(schemeId) ?? {
-        scheme: toScheme(row),
-        grants: 0,
-        expenditure: 0,
-      };
-      entry.expenditure += Number(row.amount);
-      byScheme.set(schemeId, entry);
+      entry.grants += Number(row.receipts);
+      entry.expenditure += Number(row.payments);
+      byScheme.set(fnv1a(scheme), entry);
     }
 
-    const totalGrants = grants.reduce((sum, g) => sum + g.amount, 0);
-    const totalExpenditure = expenditures.reduce((sum, e) => sum + e.amount, 0);
+    const totalGrants = schemeRows.reduce((sum, r) => sum + Number(r.receipts), 0);
+    const totalExpenditure = schemeRows.reduce((sum, r) => sum + Number(r.payments), 0);
+
+    // Default to the receipts-minus-payments difference; when a panchayat has
+    // no scheme data for the fy, fall back to the statement opening balance so
+    // the screen never reports an empty zero when statements exist.
+    let balance = totalGrants - totalExpenditure;
+    if (schemeRows.length === 0) {
+      const statements = (await db.query(OPENING_BALANCE_SQL, [id, fy])) as StatementRow[];
+      if (statements[0]?.opening_balance != null) {
+        balance = Number(statements[0].opening_balance);
+      }
+    }
 
     c.header('Cache-Control', 'public, max-age=3600');
     return c.json({
@@ -188,7 +212,7 @@ financeRouter.get(
       summary: {
         totalGrants,
         totalExpenditure,
-        balance: totalGrants - totalExpenditure,
+        balance,
         byScheme: [...byScheme.values()],
         grants,
         expenditures,
