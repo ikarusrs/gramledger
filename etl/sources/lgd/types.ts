@@ -54,4 +54,9 @@ export interface LgdConfig {
   pageSize: number;
   /** Guard against runaway pagination: pages fetched per run at most. */
   maxPages: number;
+  /**
+   * Optional LGD state code (e.g. `27` for Maharashtra). When set, the fetch
+   * only pulls records for that state via the `datastore_search` filters param.
+   */
+  stateCode?: number;
 }

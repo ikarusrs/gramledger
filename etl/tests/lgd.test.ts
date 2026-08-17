@@ -74,6 +74,12 @@ describe('config', () => {
     expect(config.pageSize).toBe(1000);
     expect(config.maxPages).toBe(20);
     expect(config.baseUrl).toContain('datastore_search');
+    expect(config.stateCode).toBeUndefined();
+  });
+
+  it('reads an optional state code', () => {
+    const config = loadLgdConfig({ ETL_LGD_RESOURCE_ID: 'res-1', ETL_LGD_STATE_CODE: '27' });
+    expect(config.stateCode).toBe(27);
   });
 });
 
@@ -84,6 +90,16 @@ describe('client', () => {
     expect(url).toContain('resource_id=cb81a7a4-a3bc-4962-a1eb-838a1db5bfdb');
     expect(url).toContain('limit=2');
     expect(url).toContain('offset=10');
+  });
+
+  it('appends a state filter when a state code is configured', () => {
+    const url = buildSearchUrl(sourceConfig({ stateCode: 27 }), 0);
+    expect(url).toContain('filters=%7B%22state_code%22%3A%2227%22%7D');
+    expect(url).toContain('offset=0');
+  });
+
+  it('omits the state filter when no state code is configured', () => {
+    expect(buildSearchUrl(sourceConfig(), 0)).not.toContain('filters=');
   });
 
   it('parses a well-formed page envelope', async () => {

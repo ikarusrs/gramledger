@@ -11,16 +11,19 @@ export interface LgdPage {
   count: number;
 }
 
+/** The config fields involved in building a `datastore_search` URL. */
+type SearchConfig = Pick<LgdConfig, 'baseUrl' | 'resourceId' | 'pageSize' | 'stateCode'>;
+
 /** Builds the paginated `datastore_search` URL for `offset`. */
-export function buildSearchUrl(
-  config: Pick<LgdConfig, 'baseUrl' | 'resourceId' | 'pageSize'>,
-  offset: number,
-): string {
+export function buildSearchUrl(config: SearchConfig, offset: number): string {
   const params = new URLSearchParams({
     resource_id: config.resourceId,
     limit: String(config.pageSize),
     offset: String(offset),
   });
+  if (config.stateCode !== undefined) {
+    params.set('filters', JSON.stringify({ state_code: String(config.stateCode) }));
+  }
   return `${config.baseUrl}?${params.toString()}`;
 }
 
@@ -31,7 +34,7 @@ export function buildSearchUrl(
  * or missing `records`) is a permanent error and aborts the run.
  */
 export async function fetchLgdPage(
-  config: Pick<LgdConfig, 'baseUrl' | 'resourceId' | 'pageSize'>,
+  config: SearchConfig,
   offset: number,
   fetchFn: typeof fetch = fetch,
 ): Promise<LgdPage> {

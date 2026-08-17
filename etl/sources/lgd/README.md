@@ -46,6 +46,7 @@ sources/lgd/
 | `ETL_LGD_RESOURCE_ID` | _(required)_                                        | The LGD village→GP mapping resource id  |
 | `ETL_LGD_PAGE_SIZE`   | `1000`                                              | Records per page                        |
 | `ETL_LGD_MAX_PAGES`   | `20`                                                | Guard against runaway pagination        |
+| `ETL_LGD_STATE_CODE`  | _(optional)_                                        | Fetch only this LGD state (e.g. `27` for Maharashtra) via datastore filters |
 
 Plus the core ETL config (`ETL_*`, `DATABASE_URL`) — see
 [`src/core/config.ts`](../../src/core/config.ts).
