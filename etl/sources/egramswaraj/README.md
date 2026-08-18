@@ -51,7 +51,7 @@ contract.
 | `ETL_EGS_BASE_URL`        | `https://egramswaraj.gov.in/`               | Public portal base URL                |
 | `ETL_EGS_REPORT_URLS`     | Maharashtra 2025-26 expenditure and summary | Comma-separated public report paths   |
 | `ETL_EGS_MIN_INTERVAL_MS` | `6000`                                      | Maximum 10 requests/minute by default |
-| `ETL_EGS_TIMEOUT_MS`      | `30000`                                     | Per-request timeout                   |
+| `ETL_EGS_TIMEOUT_MS`      | `90000`                                     | Per-request timeout                   |
 | `ETL_EGS_MAX_PAGES`       | `20`                                        | Maximum configured report requests    |
 
 ## Deferred loader decision

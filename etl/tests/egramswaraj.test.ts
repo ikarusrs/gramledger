@@ -364,6 +364,52 @@ describe('eGramSwaraj crawler', () => {
       ),
     ).rejects.toMatchObject({ retryable: true });
   });
+
+  it('retries a flaky page with backoff before giving up on it', async () => {
+    let calls = 0;
+    const fetchFn: typeof fetch = async () => {
+      calls++;
+      if (calls === 1) throw new Error('socket hang up');
+      return new Response(
+        '<html><table><tr><td>Village wise Receipt and Payment Statement Financial Year:-2025-2026 State:-Maharashtra,District:-A,Block:-B</td></tr></table></html>',
+        { status: 200 },
+      );
+    };
+    const result = await createEGramSwarajFetcher(
+      sourceConfig({ reportUrls: ['x.html'], maxPages: 1 }),
+      { fetchFn, sleep: async () => {} },
+    )(testCtx('fetch'));
+
+    const pages = JSON.parse(result.content) as { url: string }[];
+    expect(calls).toBe(2);
+    expect(pages).toHaveLength(1);
+    expect(result.meta.warnings).toHaveLength(0);
+  });
+
+  it('skips a persistently failing page mid-crawl and keeps going', async () => {
+    const fetchFn: typeof fetch = async (input) => {
+      const url = String(input);
+      if (url.includes('name=bad.html')) throw new Error('ECONNRESET');
+      return new Response(
+        '<html><table><tr><td>Village wise Receipt and Payment Statement Financial Year:-2025-2026 State:-Maharashtra,District:-A,Block:-B</td></tr>' +
+          '<tr><td>Village Panchayat & Equivalent</td><td>Receipts</td><td>Payments</td></tr>' +
+          '<tr><td><a href="FileRedirect.jsp?FD=ExpFY2025-2026/27&name=1.html">Ambad</a></td><td>10</td><td>20</td></tr>' +
+          '<tr><td><a href="FileRedirect.jsp?FD=ExpFY2025-2026/27&name=bad.html">Flaky</a></td><td>1</td><td>2</td></tr>' +
+          '</table></html>',
+        { status: 200 },
+      );
+    };
+    const result = await createEGramSwarajFetcher(
+      sourceConfig({ reportUrls: ['x.html'], maxPages: 3 }),
+      { fetchFn, sleep: async () => {} },
+    )(testCtx('fetch'));
+
+    const pages = JSON.parse(result.content) as { url: string }[];
+    expect(pages).toHaveLength(2);
+    expect(pages.map((p) => p.url)).not.toContain('bad.html');
+    expect((result.meta.warnings as string[]).join()).toContain('bad.html');
+    expect(result.meta.warnings as string[]).toHaveLength(1);
+  });
 });
 
 describe('pipeline', () => {

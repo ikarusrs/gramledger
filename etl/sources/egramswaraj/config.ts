@@ -22,7 +22,7 @@ export function loadEGramSwarajConfig(env: EnvLike = process.env): EGramSwarajCo
     reportUrls,
     userAgent: `GramLedger-eGramSwaraj/0.1 (+mailto:${contact})`,
     minIntervalMs: positiveInt('ETL_EGS_MIN_INTERVAL_MS', 6_000, env),
-    timeoutMs: positiveInt('ETL_EGS_TIMEOUT_MS', 30_000, env),
+    timeoutMs: positiveInt('ETL_EGS_TIMEOUT_MS', 90_000, env),
     maxPages: positiveInt('ETL_EGS_MAX_PAGES', 20, env),
   };
 }

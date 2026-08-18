@@ -1,5 +1,6 @@
 import { ETLError } from '../../src/core/errors.js';
-import type { Fetcher, FetchResult } from '../../src/core/types.js';
+import { withRetry } from '../../src/core/retry.js';
+import type { Fetcher, FetchResult, StageContext } from '../../src/core/types.js';
 import { detectLevel, parsePage, type ReportLevel } from './html.js';
 import type { EGramReportEnvelope, EGramSwarajConfig } from './types.js';
 
@@ -24,9 +25,11 @@ interface FetchState {
  * Each level page links to the next via `FileRedirect.jsp` URLs (R&P) or
  * `.do` pages (scheme); GP statements and scheme village pages are leaves.
  * Fetches are rate-limited (`minIntervalMs`), carry a transparent user agent,
- * and reuse any session cookie. Bounded by `maxPages`. Non-retryable page
- * failures are skipped with a warning; a retryable failure aborts so the
- * pipeline's fetch retry re-runs the crawl.
+ * and reuse any session cookie. Bounded by `maxPages`. Every page is retried
+ * with backoff (core retry config); a page that exhausts its retries is skipped
+ * with a warning so one flaky page cannot void an entire crawl. A retryable
+ * failure before any page has been fetched is a real outage and aborts so the
+ * pipeline's fetch retry restarts the crawl. Progress is logged every 50 pages.
  */
 export function createEGramSwarajFetcher(
   config: EGramSwarajConfig,
@@ -36,7 +39,7 @@ export function createEGramSwarajFetcher(
   const sleep = options.sleep ?? ((ms) => new Promise((resolve) => setTimeout(resolve, ms)));
   const state: FetchState = { lastRequestAt: 0, cookie: '' };
 
-  return async (): Promise<FetchResult> => {
+  return async (ctx: StageContext): Promise<FetchResult> => {
     const pages: EGramReportEnvelope[] = [];
     const warnings: string[] = [];
     const queue = config.reportUrls.map((path) => new URL(path, config.baseUrl).toString());
@@ -47,21 +50,44 @@ export function createEGramSwarajFetcher(
       const url = queue.shift()!;
       if (visited.has(url)) continue;
       visited.add(url);
+      let html: string;
       try {
-        const html = await fetchOne(config, state, url, fetchFn, sleep);
-        pages.push({ url, html });
-        requests++;
-        const level = detectLevel(html);
-        for (const child of childLinks(url, html, level)) {
-          if (!visited.has(child)) queue.push(child);
-        }
+        html = await withRetry(() => fetchOne(config, state, url, fetchFn, sleep), {
+          attempts: ctx.config.retry.attempts,
+          baseBackoffMs: ctx.config.retry.baseBackoffMs,
+          maxBackoffMs: ctx.config.retry.maxBackoffMs,
+        });
       } catch (cause) {
-        if (cause instanceof ETLError && cause.retryable) throw cause;
         const detail = cause instanceof Error ? cause.message : String(cause);
+        if (cause instanceof ETLError && cause.retryable && pages.length === 0 && requests === 0) {
+          throw cause;
+        }
         warnings.push(`${url}: ${detail}`);
+        ctx.log.warn('egramswaraj: skipping page after retries', { url, error: detail });
+        ctx.metrics.increment('fetch.pages_skipped');
+        continue;
+      }
+      pages.push({ url, html });
+      requests++;
+      ctx.metrics.increment('fetch.pages');
+      const level = detectLevel(html);
+      for (const child of childLinks(url, html, level)) {
+        if (!visited.has(child)) queue.push(child);
+      }
+      if (pages.length % 50 === 0) {
+        ctx.log.info('egramswaraj crawl progress', {
+          pages: pages.length,
+          requests,
+          queueDepth: queue.length,
+        });
       }
     }
 
+    ctx.log.info('egramswaraj crawl complete', {
+      pages: pages.length,
+      requests,
+      warnings: warnings.length,
+    });
     return {
       content: JSON.stringify(pages),
       meta: {
