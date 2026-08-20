@@ -13,7 +13,8 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "build": "tsc --noEmit",
-    "run": "tsx src/cli.ts"
+    "run": "tsx src/cli.ts",
+    "run:districts": "tsx src/districts.ts"
   },
   "dependencies": {
     "node-html-parser": "^9.0.1",
