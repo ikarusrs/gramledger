@@ -48,9 +48,15 @@ async function resolveNames(
        FROM districts d
        JOIN talukas t ON t.district_id = d.id
        JOIN panchayats p ON p.taluka_id = t.id
-      WHERE (d.name_en = $1 OR d.name_mr = $1)
-        AND (p.name_en = $3 OR p.name_mr = $3)
-        AND ($2::text IS NULL OR t.name_en = $2 OR t.name_mr = $2)
+       WHERE lower(d.name_en) = lower(
+               CASE lower($1)
+                 WHEN 'ahilyanagar' THEN 'AHMEDNAGAR'
+                 WHEN 'chhatrapati sambhajinagar' THEN 'AURANGABAD'
+                 ELSE $1
+               END
+             )
+         AND (lower(p.name_en) = lower($3) OR lower(p.name_mr) = lower($3))
+         AND ($2::text IS NULL OR lower(t.name_en) = lower($2) OR lower(t.name_mr) = lower($2))
       LIMIT 1`,
     [record.districtName, record.blockName ?? null, record.panchayatName],
   );
