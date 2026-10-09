@@ -1,0 +1,81 @@
+RESUME POINT — Maharashtra GP financials: make it show on the website
+======================================================================
+Date written: 2026-08-10  (branch: main, clean working tree)
+Servers running (nohup npm run dev): web :5173, API :8787, log /tmp/opencode/dev-run.log
+
+GOAL
+----
+Fill the DB with all-Maharashtra GP financials and make them render on the
+website (finance screen currently shows zeros).
+
+DIAGNOSIS (confirmed)
+---------------------
+1. Data-path mismatch (root cause of zeros):
+   - Finance endpoint apps/api/src/routes/v1/finance.ts reads
+     grants / expenditures / schemes  -> ALL EMPTY (0 rows), never written by ETL.
+   - ETL writes scheme_expenditures (per-GP, per-scheme receipts/payments) and
+     financial_statements (monthly R&P), also currently 0 rows (crawl never run).
+   - Still the intended "deferred loader decision" (etl/sources/egramswaraj/README.md).
+
+2. Hierarchy is a partial sample:
+   - Local DB gramledger_test (localhost:5432, user gramledger_test) has only
+     5 of 34 Maharashtra districts and only 8 Maharashtra panchayats
+     (sample = first ~20 pages of a national LGD resource).
+   - eGramSwaraj resolver (etl/sources/egramswaraj/resolver.ts) maps report names
+     to panchayats -> cannot map all Maharashtra without full hierarchy.
+
+3. Crawl surface (validated live):
+   - egramswaraj.gov.in reachable (HTTP 200).
+   - R&P family: state report (34 districts) -> district -> block -> GP monthly.
+   - Scheme-wise family: SchemeWiseExpenditureReport -> blockWiseSummaryReport.do
+     -> schemeWiseVillageReport.do (per-GP leaf rows).
+   - LGD CKAN mirror resource cb81a7a4-a3bc-4962-a1eb-838a1db5bfdb supports
+     filters={"state_code":"27"} -> exactly 44,555 Maharashtra records (~45 pages @1000/page).
+   - Plan: full polite crawl (6s interval) is a multi-hour-to-day job; no
+     checkpoint/resume; restart re-crawls (idempotent upserts).
+
+IMPLEMENTATION PLAN
+-------------------
+PHASE A — Make data surfaceable (code, verify first)
+  1. Rewrite apps/api/src/routes/v1/finance.ts to read scheme_expenditures
+     (fallback financial_statements for opening balance). Synthesize Scheme from
+     denormalized scheme text: code = stable slug/hash, nameMr/nameEn = scheme
+     text (English-only, flagged), ministry = null. Contract identical.
+       byScheme: receipts->grants, payments->expenditure
+       grants rows: source, disbursedAt:null
+       expenditures rows: head:''
+       totals: sum receipts / sum payments / balance = diff
+  2. Update apps/api/test/finance.test.ts to new SQL (same response shapes).
+  3. Verify via curl on running server with seeded rows.
+
+PHASE B — Load full Maharashtra LGD hierarchy
+  1. etl/sources/lgd/client.ts: add optional ETL_LGD_STATE_CODE -> append
+     filters={"state_code":"27"} to datastore_search URL (backward compat).
+  2. Run ETL_SOURCE=lgd with ETL_LGD_RESOURCE_ID=cb81a7a4-a3bc-4962-a1eb-838a1db5bfdb,
+     ETL_LGD_STATE_CODE=27, ETL_LGD_MAX_PAGES~50, page_size 1000.
+     Expect ~34 districts, all talukas/panchayats/villages for Maharashtra.
+     (name_mr gets English copy; resolver matches name_en OR name_mr.)
+
+PHASE C — eGramSwaraj crawl (long-running, background)
+  1. Pilot: one district R&P report URL + one scheme report, ETL_EGS_MAX_PAGES~60
+     -> validate parse->resolve->load; measure unresolved/dead-lettered counts.
+  2. Full run: seed ETL_EGS_REPORT_URLS with state report (+ scheme-wise URLs
+     discovered in pilot), ETL_EGS_MAX_PAGES high (~50000), polite 6s interval.
+     Launch nohup, monitor via scheme_expenditures / financial_statements row
+     counts and ingestion_runs. Expect to OUTLAST the session.
+  3. Needs ETL_EGS_CONTACT_EMAIL (real email) — used in user-agent.
+
+PHASE D — Verify website + gates
+  - /v1/hierarchy, /v1/panchayats search, and Maharashtra GP finance page render
+    real data.
+  - npm run format:check && npm run lint && npm run test (API + ETL + web).
+
+TRADEOFFS / NOTES
+-----------------
+- Full-state crawl likely won't finish in one session; run in background.
+- Name matching eGramSwaraj vs LGD is exact-match on name_en/name_mr; some GPs
+  will dead-letter (partial coverage is inherent to the design).
+- Scheme names display English-only for now.
+- NEVER commit secrets / keys.txt / .dev.vars / database/.env.
+- keys.txt holds placeholders: ETL_LGD_RESOURCE_ID= (currently blank) and
+  ETL_EGS_CONTACT_EMAIL=you@example.com — fill both before Phase B/C.
