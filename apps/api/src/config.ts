@@ -5,6 +5,8 @@
 export type Bindings = {
   ENVIRONMENT?: string;
   LOG_LEVEL?: string;
+  GEMINI_API_KEY?: string;
+  YOUTUBE_API_KEY?: string;
   [key: string]: unknown;
 };
 

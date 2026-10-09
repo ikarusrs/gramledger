@@ -63,12 +63,31 @@ export function AppShell() {
               {t('home')}
             </NavLink>
             <NavLink
+              to="/advisor"
+              className={({ isActive }) =>
+                `app-bar__link${isActive ? ' app-bar__link--active' : ''}`
+              }
+            >
+              Advisor
+            </NavLink>
+            <NavLink
+              to="/videos"
+              className={({ isActive }) =>
+                `app-bar__link${isActive ? ' app-bar__link--active' : ''}`
+              }
+            >
+              Farm School
+            </NavLink>
+            <NavLink
               to="/settings"
               className={({ isActive }) =>
                 `app-bar__link${isActive ? ' app-bar__link--active' : ''}`
               }
             >
               {t('settings')}
+            </NavLink>
+            <NavLink to="/account" className="app-bar__link app-bar__account">
+              Account
             </NavLink>
           </nav>
           <div className="app-bar__actions">
