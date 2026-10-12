@@ -20,7 +20,14 @@ export function AccountScreen() {
   const [busy, setBusy] = useState(false);
   useEffect(() => {
     const saved = localStorage.getItem(USER_KEY);
-    if (saved) setUser(JSON.parse(saved));
+    if (!saved) return;
+    try {
+      const parsed = JSON.parse(saved) as User;
+      if (parsed && typeof parsed.email === 'string') setUser(parsed);
+      else localStorage.removeItem(USER_KEY);
+    } catch {
+      localStorage.removeItem(USER_KEY);
+    }
   }, []);
   async function signIn(event: FormEvent) {
     event.preventDefault();
