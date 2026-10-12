@@ -3,13 +3,13 @@ import { Link } from 'react-router-dom';
 
 import { DemoBanner } from '../../components/DemoBanner';
 import { LevelBadge } from '../../components/LevelBadge';
-import { useLocale } from '../../core/i18n/LocaleContext';
+import { localized, useLocale } from '../../core/i18n/LocaleContext';
 import { getHierarchy, searchPanchayats } from '../../lib/api/endpoints';
 import type { ApiResult } from '../../lib/api/endpoints';
 import type { Hierarchy, Panchayat, SearchQuery } from '../../lib/api/types';
 
 export function HomeScreen() {
-  const { t } = useLocale();
+  const { locale, t } = useLocale();
   const [hierarchy, setHierarchy] = useState<ApiResult<Hierarchy> | null>(null);
   const [query, setQuery] = useState('');
   const [debouncedQuery, setDebouncedQuery] = useState('');
@@ -76,7 +76,7 @@ export function HomeScreen() {
             <option value="">{t('allDistricts')}</option>
             {hierarchy?.data.districts.map((d) => (
               <option key={d.id} value={d.id}>
-                {d.nameMr} ({d.nameEn})
+                {localized(d.nameMr, d.nameEn, locale)}
               </option>
             ))}
           </select>
@@ -97,7 +97,7 @@ export function HomeScreen() {
             <option value="">{t('allTalukas')}</option>
             {selectedDistrict?.talukas.map((tk) => (
               <option key={tk.id} value={tk.id}>
-                {tk.nameMr} ({tk.nameEn})
+                {localized(tk.nameMr, tk.nameEn, locale)}
               </option>
             ))}
           </select>
@@ -111,17 +111,18 @@ export function HomeScreen() {
           {list.length === 0 ? (
             <p className="muted">{t('searchNoResults')}</p>
           ) : (
-            <ul className="list" aria-label="Results">
+            <ul className="list" aria-label={t('results')}>
               {list.map((p) => (
                 <li key={p.id}>
                   <Link to={`/panchayat/${p.id}`} className="list__item">
                     <span className="list__item-main">
                       <span className="list__item-title">
-                        {p.nameMr} <span className="muted">({p.nameEn})</span>
+                        {localized(p.nameMr, p.nameEn, locale)}
                       </span>
                       <span className="list__item-sub">
-                        {p.districtNameMr ?? p.districtNameEn} · {p.talukaNameMr ?? p.talukaNameEn}{' '}
-                        · <span className="mono">{p.lgdCode}</span>
+                        {localized(p.districtNameMr, p.districtNameEn, locale)} ·{' '}
+                        {localized(p.talukaNameMr, p.talukaNameEn, locale)} ·{' '}
+                        <span className="mono">{p.lgdCode}</span>
                       </span>
                     </span>
                     <LevelBadge level={p.level} />

@@ -12,7 +12,7 @@ import {
 } from 'recharts';
 
 import { DemoBanner } from '../../components/DemoBanner';
-import { useLocale } from '../../core/i18n/LocaleContext';
+import { localized, useLocale } from '../../core/i18n/LocaleContext';
 import { getPanchayatFinance } from '../../lib/api/endpoints';
 import type { ApiResult } from '../../lib/api/endpoints';
 import type { PanchayatFinance } from '../../lib/api/types';
@@ -20,7 +20,7 @@ import { formatInr, formatInrCompact } from '../../lib/format';
 
 export function FinanceScreen() {
   const { id } = useParams();
-  const { t } = useLocale();
+  const { locale, t } = useLocale();
   const [result, setResult] = useState<ApiResult<PanchayatFinance> | null>(null);
   const [fy, setFy] = useState<number | undefined>(undefined);
 
@@ -169,7 +169,7 @@ export function FinanceScreen() {
             <tbody>
               {summary.grants.map((g, i) => (
                 <tr key={`${g.scheme.code}-${i}`}>
-                  <td>{g.scheme.nameMr}</td>
+                  <td>{localized(g.scheme.nameMr, g.scheme.nameEn, locale)}</td>
                   <td>{g.source}</td>
                   <td align="right" className="mono">
                     {formatInr(g.amount)}
@@ -195,7 +195,7 @@ export function FinanceScreen() {
             <tbody>
               {summary.expenditures.map((e, i) => (
                 <tr key={`${e.scheme.code}-${e.head}-${i}`}>
-                  <td>{e.scheme.nameMr}</td>
+                  <td>{localized(e.scheme.nameMr, e.scheme.nameEn, locale)}</td>
                   <td>{e.head}</td>
                   <td align="right" className="mono">
                     {formatInr(e.amount)}

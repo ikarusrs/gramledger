@@ -3,7 +3,7 @@ import { Link, useParams } from 'react-router-dom';
 
 import { DemoBanner } from '../../components/DemoBanner';
 import { LevelBadge } from '../../components/LevelBadge';
-import { useLocale } from '../../core/i18n/LocaleContext';
+import { localized, useLocale } from '../../core/i18n/LocaleContext';
 import { getPanchayat } from '../../lib/api/endpoints';
 import type { ApiResult } from '../../lib/api/endpoints';
 import type { PanchayatDetail } from '../../lib/api/types';
@@ -19,7 +19,7 @@ function Field({ label, value }: { label: string; value: string | null }) {
 
 export function PanchayatScreen() {
   const { id } = useParams();
-  const { t } = useLocale();
+  const { locale, t } = useLocale();
   const [result, setResult] = useState<ApiResult<PanchayatDetail | undefined> | null>(null);
 
   useEffect(() => {
@@ -63,15 +63,13 @@ export function PanchayatScreen() {
       {result.isMock && <DemoBanner />}
 
       <header className="page__head">
-        <h1 className="page__title">
-          {detail.nameMr} <span className="muted">({detail.nameEn})</span>
-        </h1>
+        <h1 className="page__title">{localized(detail.nameMr, detail.nameEn, locale)}</h1>
         <LevelBadge level={detail.level} />
       </header>
 
       <p className="page__subtitle">
-        {detail.districtNameMr ?? detail.districtNameEn} ·{' '}
-        {detail.talukaNameMr ?? detail.talukaNameEn}
+        {localized(detail.districtNameMr, detail.districtNameEn, locale)} ·{' '}
+        {localized(detail.talukaNameMr, detail.talukaNameEn, locale)}
       </p>
       <button className="secondary-btn" onClick={save}>
         {t('savePanchayat')}

@@ -5,7 +5,7 @@ import { useLocale } from '../../core/i18n/LocaleContext';
 type Message = { role: 'user' | 'model'; text: string };
 
 export function AdvisorScreen() {
-  const { t } = useLocale();
+  const { locale, t } = useLocale();
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
   const [busy, setBusy] = useState(false);
@@ -53,13 +53,16 @@ export function AdvisorScreen() {
         {messages.length === 0 && (
           <div className="advisor-empty">
             <strong>{t('startQuestion')}</strong>
-            <span>“माझ्या कापसाच्या पिकावर पांढरे डाग दिसत आहेत, काय करू?”</span>
-            <span>“What vegetables can I plant in Nashik this month?”</span>
+            <span>
+              {locale === 'mr'
+                ? '“माझ्या कापसाच्या पिकावर पांढरे डाग दिसत आहेत, काय करू?”'
+                : '“What vegetables can I plant in Nashik this month?”'}
+            </span>
           </div>
         )}
         {messages.map((item, index) => (
           <div className={`chat-message chat-message--${item.role}`} key={`${item.role}-${index}`}>
-            <span>{item.role === 'user' ? 'You' : 'Shetkari Mitra'}</span>
+            <span>{item.role === 'user' ? t('you') : 'Shetkari Mitra'}</span>
             <p>{item.text}</p>
           </div>
         ))}
@@ -82,10 +85,7 @@ export function AdvisorScreen() {
             {busy ? t('sending') : t('askAdvisor')}
           </button>
         </form>
-        <small className="muted">
-          Advice is educational, not a substitute for a local agriculture officer, veterinarian,
-          doctor, or emergency service.
-        </small>
+        <small className="muted">{t('advisorDisclaimer')}</small>
       </section>
     </div>
   );

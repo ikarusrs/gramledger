@@ -104,6 +104,9 @@ export const mrMessages = {
   thinking: 'तुमच्या प्रश्नाचा विचार करत आहे…',
   primaryNav: 'मुख्य नेव्हिगेशन',
   results: 'परिणाम',
+  you: 'तुम्ही',
+  advisorDisclaimer:
+    'हा सल्ला शैक्षणिक आहे. स्थानिक कृषी अधिकारी, पशुवैद्य, डॉक्टर किंवा आपत्कालीन सेवांचा पर्याय नाही.',
 } as const;
 
 export type MessageKey = keyof typeof mrMessages;
@@ -215,5 +218,8 @@ export const messages: Record<Locale, Messages> = {
     thinking: 'Thinking about your question…',
     primaryNav: 'Primary navigation',
     results: 'Results',
+    you: 'You',
+    advisorDisclaimer:
+      'This advice is educational and not a substitute for a local agriculture officer, veterinarian, doctor, or emergency service.',
   } satisfies Messages,
 };

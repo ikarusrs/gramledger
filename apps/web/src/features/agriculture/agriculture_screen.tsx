@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { useLocale } from '../../core/i18n/LocaleContext';
+import { localized, useLocale } from '../../core/i18n/LocaleContext';
 
 type Weather = {
   current?: {
@@ -20,7 +20,7 @@ async function get<T>(path: string): Promise<T> {
 }
 
 export function AgricultureScreen() {
-  const { t } = useLocale();
+  const { locale, t } = useLocale();
   const [weather, setWeather] = useState<Weather | null>(null);
   const [schemes, setSchemes] = useState<Scheme[]>([]);
   const [calendar, setCalendar] = useState<CalendarItem[]>([]);
@@ -89,8 +89,7 @@ export function AgricultureScreen() {
         <div className="data-list">
           {calendar.map((item) => (
             <div className="data-row" key={item.crop}>
-              <strong>{item.cropMr}</strong>
-              <span>{item.crop}</span>
+              <strong>{localized(item.cropMr, item.crop, locale)}</strong>
               <span>
                 {t('sow')} {item.sowing}
               </span>
@@ -115,8 +114,7 @@ export function AgricultureScreen() {
               rel="noreferrer"
               key={scheme.nameEn}
             >
-              <strong>{scheme.nameMr}</strong>
-              <span>{scheme.nameEn}</span>
+              <strong>{localized(scheme.nameMr, scheme.nameEn, locale)}</strong>
               <p>{scheme.description}</p>
             </a>
           ))}

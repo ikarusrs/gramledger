@@ -41,3 +41,7 @@ export function useLocale(): LocaleContextValue {
   if (!ctx) throw new Error('useLocale must be used within a LocaleProvider');
   return ctx;
 }
+
+export function localized(mr: string | undefined, en: string | undefined, locale: Locale): string {
+  return locale === 'mr' ? (mr ?? en ?? '') : (en ?? mr ?? '');
+}
