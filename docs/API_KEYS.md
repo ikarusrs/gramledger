@@ -7,18 +7,18 @@ The browser never receives these keys. The web app calls the GramLedger Worker, 
 Create `apps/api/.dev.vars` (this file is gitignored):
 
 ```text
-GEMINI_API_KEY=your-google-ai-studio-key
+GROQ_API_KEY=your-groq-api-key
 YOUTUBE_API_KEY=your-google-cloud-youtube-data-api-key
 ```
 
-Then run `npm run dev`. Gemini requires the Generative Language API. YouTube requires YouTube Data API v3 with the key restricted to that API. Do not put either key in `apps/web`, Vite environment variables, committed files, or the URL.
+Then run `npm run dev`. Groq keys are available from [Groq Console](https://console.groq.com/keys). YouTube requires YouTube Data API v3 with the key restricted to that API. Do not put either key in `apps/web`, Vite environment variables, committed files, or the URL.
 
 ## Production
 
 From the repository root, add Worker secrets with Wrangler:
 
 ```bash
-npx wrangler secret put GEMINI_API_KEY --config apps/api/wrangler.toml
+npx wrangler secret put GROQ_API_KEY --config apps/api/wrangler.toml
 npx wrangler secret put YOUTUBE_API_KEY --config apps/api/wrangler.toml
 ```
 

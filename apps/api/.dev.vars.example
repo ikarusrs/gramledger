@@ -3,3 +3,4 @@
 # `wrangler secret put <KEY>` or the Cloudflare dashboard.
 ENVIRONMENT=development
 LOG_LEVEL=debug
+GROQ_API_KEY=your-groq-api-key

@@ -17,33 +17,35 @@ const SYSTEM_PROMPT = `You are GramLedger Shetkari Mitra, a careful agriculture 
 export const advisorRouter = new Hono<AppEnv>();
 
 advisorRouter.post('/advisor/chat', zValidator('json', chatSchema), async (c) => {
-  const apiKey = c.env.GEMINI_API_KEY;
+  const apiKey = c.env.GROQ_API_KEY;
   if (!apiKey) throw serviceUnavailable('Agriculture advisor is not configured');
 
   const { message, history = [] } = c.req.valid('json');
-  const response = await fetch(
-    `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${encodeURIComponent(apiKey)}`,
-    {
-      method: 'POST',
-      headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({
-        systemInstruction: { parts: [{ text: SYSTEM_PROMPT }] },
-        contents: [
-          ...history.map((item) => ({ role: item.role, parts: [{ text: item.text }] })),
-          { role: 'user', parts: [{ text: message }] },
-        ],
-        generationConfig: { temperature: 0.35, maxOutputTokens: 900 },
-      }),
+  const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+    method: 'POST',
+    headers: {
+      authorization: `Bearer ${apiKey}`,
+      'content-type': 'application/json',
     },
-  );
+    body: JSON.stringify({
+      model: 'llama-3.1-8b-instant',
+      messages: [
+        { role: 'system', content: SYSTEM_PROMPT },
+        ...history.map((item) => ({
+          role: item.role === 'model' ? 'assistant' : item.role,
+          content: item.text,
+        })),
+        { role: 'user', content: message },
+      ],
+      temperature: 0.35,
+      max_tokens: 900,
+    }),
+  });
   if (!response.ok) throw serviceUnavailable('Agriculture advisor is temporarily unavailable');
   const payload = (await response.json()) as {
-    candidates?: Array<{ content?: { parts?: Array<{ text?: string }> } }>;
+    choices?: Array<{ message?: { content?: string } }>;
   };
-  const text = payload.candidates?.[0]?.content?.parts
-    ?.map((part) => part.text ?? '')
-    .join('')
-    .trim();
+  const text = payload.choices?.[0]?.message?.content?.trim();
   if (!text) throw serviceUnavailable('The advisor returned no answer');
   return c.json({ text });
 });
