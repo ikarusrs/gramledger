@@ -1,4 +1,4 @@
-import postgres, { type Sql } from 'postgres';
+import { neon } from '@neondatabase/serverless';
 import type { Bindings } from '../config';
 
 /** A row returned by the database (column → value). */
@@ -18,10 +18,10 @@ export interface Db {
 export function createDb(bindings: Bindings): Db | undefined {
   const url = typeof bindings.DATABASE_URL === 'string' ? bindings.DATABASE_URL : undefined;
   if (!url) return undefined;
-  const sql: Sql = postgres(url, { max: 1, prepare: false });
+  const sql = neon(url);
   return {
     async query(text: string, params: unknown[] = []): Promise<Row[]> {
-      return (await sql.unsafe(text, params as never[])) as unknown as Row[];
+      return (await sql.query(text, params)) as unknown as Row[];
     },
   };
 }
