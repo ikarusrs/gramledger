@@ -17,7 +17,7 @@ const SYSTEM_PROMPT = `You are GramLedger Shetkari Mitra, a careful agriculture 
 export const advisorRouter = new Hono<AppEnv>();
 
 advisorRouter.post('/advisor/chat', zValidator('json', chatSchema), async (c) => {
-  const apiKey = c.env.GROQ_API_KEY;
+  const apiKey = c.env.GROQ_API_KEY?.trim();
   if (!apiKey) throw serviceUnavailable('Agriculture advisor is not configured');
 
   const { message, history = [] } = c.req.valid('json');
@@ -28,7 +28,7 @@ advisorRouter.post('/advisor/chat', zValidator('json', chatSchema), async (c) =>
       'content-type': 'application/json',
     },
     body: JSON.stringify({
-      model: 'llama-3.1-8b-instant',
+      model: c.env.GROQ_MODEL?.trim() || 'llama-3.3-70b-versatile',
       messages: [
         { role: 'system', content: SYSTEM_PROMPT },
         ...history.map((item) => ({
@@ -41,7 +41,17 @@ advisorRouter.post('/advisor/chat', zValidator('json', chatSchema), async (c) =>
       max_tokens: 900,
     }),
   });
-  if (!response.ok) throw serviceUnavailable('Agriculture advisor is temporarily unavailable');
+  if (!response.ok) {
+    const errorBody = (await response.text()).slice(0, 300);
+    console.error('Groq advisor request failed', { status: response.status, body: errorBody });
+    if (response.status === 401) {
+      throw serviceUnavailable('The Groq API key was rejected. Check apps/api/.dev.vars.');
+    }
+    if (response.status === 404) {
+      throw serviceUnavailable('The configured Groq model or endpoint was not found.');
+    }
+    throw serviceUnavailable('Agriculture advisor is temporarily unavailable');
+  }
   const payload = (await response.json()) as {
     choices?: Array<{ message?: { content?: string } }>;
   };

@@ -6,6 +6,7 @@ export type Bindings = {
   ENVIRONMENT?: string;
   LOG_LEVEL?: string;
   GROQ_API_KEY?: string;
+  GROQ_MODEL?: string;
   YOUTUBE_API_KEY?: string;
   [key: string]: unknown;
 };
