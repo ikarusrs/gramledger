@@ -5,7 +5,7 @@
   "description": "GramLedger web app — panchayat transparency (React + Vite)",
   "type": "module",
   "engines": {
-    "node": ">=20"
+    "node": "22.0.0"
   },
   "scripts": {
     "dev": "vite",

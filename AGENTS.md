@@ -21,7 +21,7 @@ gramledger/
 
 - **TS workspaces**: npm workspaces = `apps/api`, `database`, `etl`. Root `package.json`
   holds security `overrides` — do not remove.
-- **Node >= 20. Wrangler is pinned to v3** (Node 20 compatible) — do not bump to v4.
+- **Node 22.0.0. Wrangler is pinned to v3** — do not bump to v4.
 - **Flutter** uses its own toolchain under `apps/mobile`; driven by repo scripts.
 - Android `applicationId` is `com.gramledger.app`; **no Android SDK on this machine** —
   web build is the local verification path.
