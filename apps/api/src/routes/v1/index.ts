@@ -6,6 +6,7 @@ import { financeRouter } from './finance';
 import { detailRouter } from './profile';
 import { advisorRouter } from './advisor';
 import { videosRouter } from './videos';
+import { authRouter } from './auth';
 
 /**
  * Versioned router namespace. All feature endpoints mount under `/v1` (see
@@ -19,3 +20,4 @@ v1Router.route('/', financeRouter);
 v1Router.route('/', detailRouter);
 v1Router.route('/', advisorRouter);
 v1Router.route('/', videosRouter);
+v1Router.route('/', authRouter);

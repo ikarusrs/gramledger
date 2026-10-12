@@ -8,6 +8,9 @@ export type Bindings = {
   GROQ_API_KEY?: string;
   GROQ_MODEL?: string;
   YOUTUBE_API_KEY?: string;
+  RESEND_API_KEY?: string;
+  AUTH_FROM_EMAIL?: string;
+  JWT_SECRET?: string;
   [key: string]: unknown;
 };
 

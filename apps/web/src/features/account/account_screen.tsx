@@ -1,28 +1,65 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import type { FormEvent } from 'react';
 import { Link } from 'react-router-dom';
 import { useTheme } from '../../core/theme/ThemeContext';
 
 const USER_KEY = 'gramledger:user';
-type User = { email: string; name: string };
+type User = { id: string; email: string; name: string | null };
+const TOKEN_KEY = 'gramledger:access-token';
 
 export function AccountScreen() {
   const { mode, setMode } = useTheme();
-  const [user, setUser] = useState<User | null>(() => {
-    const saved = localStorage.getItem(USER_KEY);
-    return saved ? JSON.parse(saved) : null;
-  });
+  const [user, setUser] = useState<User | null>(null);
   const [email, setEmail] = useState('');
   const [name, setName] = useState('');
-  function signIn(event: FormEvent) {
+  const [code, setCode] = useState('');
+  const [step, setStep] = useState<'email' | 'code'>('email');
+  const [message, setMessage] = useState('');
+  const [busy, setBusy] = useState(false);
+  useEffect(() => {
+    const saved = localStorage.getItem(USER_KEY);
+    if (saved) setUser(JSON.parse(saved));
+  }, []);
+  async function signIn(event: FormEvent) {
     event.preventDefault();
-    const next = { email: email.trim(), name: name.trim() || email.split('@')[0] };
-    if (!next.email) return;
-    localStorage.setItem(USER_KEY, JSON.stringify(next));
-    setUser(next);
+    setBusy(true);
+    setMessage('');
+    const response = await fetch('/v1/auth/request-otp', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ email, name }),
+    });
+    setBusy(false);
+    if (!response.ok) {
+      setMessage((await response.json()).error?.message ?? 'Could not send the code');
+      return;
+    }
+    setStep('code');
+    setMessage('Check your email for a 6-digit code.');
+  }
+  async function verify(event: FormEvent) {
+    event.preventDefault();
+    setBusy(true);
+    setMessage('');
+    const response = await fetch('/v1/auth/verify-otp', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ email, name, code }),
+    });
+    const payload = await response.json();
+    setBusy(false);
+    if (!response.ok) {
+      setMessage(payload.error?.message ?? 'Could not verify the code');
+      return;
+    }
+    localStorage.setItem(TOKEN_KEY, payload.accessToken);
+    localStorage.setItem(USER_KEY, JSON.stringify(payload.user));
+    setUser(payload.user);
+    setMessage('');
   }
   function signOut() {
     localStorage.removeItem(USER_KEY);
+    localStorage.removeItem(TOKEN_KEY);
     setUser(null);
   }
   return (
@@ -35,8 +72,8 @@ export function AccountScreen() {
       </header>
       {user ? (
         <section className="card stack">
-          <div className="account-avatar">{user.name[0]?.toUpperCase()}</div>
-          <h2 className="card__title">{user.name}</h2>
+          <div className="account-avatar">{(user.name ?? user.email)[0]?.toUpperCase()}</div>
+          <h2 className="card__title">{user.name ?? user.email}</h2>
           <p className="muted">{user.email}</p>
           <button className="secondary-btn" onClick={signOut}>
             Sign out
@@ -45,11 +82,8 @@ export function AccountScreen() {
       ) : (
         <section className="card stack">
           <h2 className="card__title">Sign in to save your villages and questions</h2>
-          <p className="muted">
-            This local MVP keeps your profile on this device. Production OTP authentication will
-            connect to the API.
-          </p>
-          <form className="stack" onSubmit={signIn}>
+          <p className="muted">We’ll send a one-time code. No password is stored.</p>
+          <form className="stack" onSubmit={step === 'email' ? signIn : verify}>
             <label className="field">
               <span className="field__label">Name</span>
               <input
@@ -70,7 +104,23 @@ export function AccountScreen() {
                 placeholder="you@example.com"
               />
             </label>
-            <button className="primary-btn">Continue</button>
+            {step === 'code' && (
+              <label className="field">
+                <span className="field__label">6-digit code</span>
+                <input
+                  className="search-box__input"
+                  inputMode="numeric"
+                  pattern="[0-9]{6}"
+                  required
+                  value={code}
+                  onChange={(event) => setCode(event.target.value)}
+                />
+              </label>
+            )}
+            {message && <p className="muted">{message}</p>}
+            <button className="primary-btn" disabled={busy}>
+              {busy ? 'Please wait…' : step === 'email' ? 'Send code' : 'Verify code'}
+            </button>
           </form>
         </section>
       )}
