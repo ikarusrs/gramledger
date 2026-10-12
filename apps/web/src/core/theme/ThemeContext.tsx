@@ -26,7 +26,7 @@ function isThemeMode(value: string | null): value is ThemeMode {
 export function ThemeProvider({ children }: { children: ReactNode }) {
   const [mode, setModeState] = useState<ThemeMode>(() => {
     const saved = localStorage.getItem(STORAGE_KEY);
-    return isThemeMode(saved) ? saved : 'system';
+    return isThemeMode(saved) ? saved : 'light';
   });
   const [systemDark, setSystemDark] = useState(systemPrefersDark);
 

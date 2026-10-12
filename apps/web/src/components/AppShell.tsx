@@ -63,6 +63,14 @@ export function AppShell() {
               {t('home')}
             </NavLink>
             <NavLink
+              to="/agriculture"
+              className={({ isActive }) =>
+                `app-bar__link${isActive ? ' app-bar__link--active' : ''}`
+              }
+            >
+              {t('fieldNotes')}
+            </NavLink>
+            <NavLink
               to="/advisor"
               className={({ isActive }) =>
                 `app-bar__link${isActive ? ' app-bar__link--active' : ''}`
@@ -78,6 +86,9 @@ export function AppShell() {
             >
               {t('farmSchool')}
             </NavLink>
+            <NavLink to="/account" className="app-bar__link app-bar__account">
+              {t('account')}
+            </NavLink>
             <NavLink
               to="/settings"
               className={({ isActive }) =>
@@ -86,20 +97,9 @@ export function AppShell() {
             >
               {t('settings')}
             </NavLink>
-            <NavLink
-              to="/agriculture"
-              className={({ isActive }) =>
-                `app-bar__link${isActive ? ' app-bar__link--active' : ''}`
-              }
-            >
-              {t('fieldNotes')}
-            </NavLink>
-            <NavLink to="/account" className="app-bar__link app-bar__account">
-              Account
-            </NavLink>
           </nav>
           <div className="app-bar__actions">
-            <div className="segmented" role="group" aria-label="Language">
+            <div className="segmented" role="group" aria-label={t('settingsLanguage')}>
               <button
                 type="button"
                 className={`segmented__btn${locale === 'mr' ? ' segmented__btn--active' : ''}`}
