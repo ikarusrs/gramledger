@@ -425,6 +425,67 @@ body {
   text-decoration: none;
 }
 
+.agri-lead {
+  padding: 36px 0;
+  border-top: 3px solid var(--primary);
+  border-bottom: 1px solid var(--border);
+}
+.agri-lead h2 {
+  margin: 10px 0 0;
+  font-size: clamp(56px, 10vw, 104px);
+  line-height: 0.9;
+}
+.agri-lead p {
+  color: var(--text-muted);
+  font-size: 18px;
+}
+.data-section {
+  display: grid;
+  grid-template-columns: minmax(180px, 0.35fr) 1fr;
+  gap: 32px;
+  padding-top: 24px;
+}
+.section-heading h2 {
+  margin: 8px 0;
+  font-size: 30px;
+}
+.data-list,
+.scheme-list {
+  border-top: 1px solid var(--border);
+}
+.data-row,
+.scheme-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr 1fr;
+  gap: 12px;
+  padding: 16px 0;
+  border-bottom: 1px solid var(--border);
+  color: inherit;
+  text-decoration: none;
+}
+.data-row span,
+.scheme-row span,
+.scheme-row p {
+  color: var(--text-muted);
+  margin: 0;
+}
+.scheme-row {
+  grid-template-columns: 1fr 1fr;
+}
+.scheme-row p {
+  grid-column: 1 / -1;
+}
+
+@media (max-width: 680px) {
+  .data-section {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+  .data-row {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
 @media (max-width: 680px) {
   .app-bar__nav {
     order: 3;

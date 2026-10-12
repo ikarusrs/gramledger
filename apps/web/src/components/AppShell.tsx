@@ -86,6 +86,14 @@ export function AppShell() {
             >
               {t('settings')}
             </NavLink>
+            <NavLink
+              to="/agriculture"
+              className={({ isActive }) =>
+                `app-bar__link${isActive ? ' app-bar__link--active' : ''}`
+              }
+            >
+              Field Notes
+            </NavLink>
             <NavLink to="/account" className="app-bar__link app-bar__account">
               Account
             </NavLink>

@@ -7,6 +7,8 @@ import { detailRouter } from './profile';
 import { advisorRouter } from './advisor';
 import { videosRouter } from './videos';
 import { authRouter } from './auth';
+import { favoritesRouter } from './favorites';
+import { agricultureRouter } from './agriculture';
 
 /**
  * Versioned router namespace. All feature endpoints mount under `/v1` (see
@@ -21,3 +23,5 @@ v1Router.route('/', detailRouter);
 v1Router.route('/', advisorRouter);
 v1Router.route('/', videosRouter);
 v1Router.route('/', authRouter);
+v1Router.route('/', favoritesRouter);
+v1Router.route('/', agricultureRouter);

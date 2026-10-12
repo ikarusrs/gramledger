@@ -47,6 +47,16 @@ export function PanchayatScreen() {
   }
 
   const profile = detail.profile;
+  const detailId = detail.id;
+  async function save() {
+    const token = localStorage.getItem('gramledger:access-token');
+    if (!token) return;
+    await fetch('/v1/me/favorites', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json', authorization: `Bearer ${token}` },
+      body: JSON.stringify({ panchayatId: detailId }),
+    });
+  }
 
   return (
     <div className="page">
@@ -63,6 +73,9 @@ export function PanchayatScreen() {
         {detail.districtNameMr ?? detail.districtNameEn} ·{' '}
         {detail.talukaNameMr ?? detail.talukaNameEn}
       </p>
+      <button className="secondary-btn" onClick={save}>
+        Save this panchayat
+      </button>
 
       <div className="card">
         <div className="profile-grid">

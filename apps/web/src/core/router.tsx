@@ -8,6 +8,7 @@ import { SettingsScreen } from '../features/settings/settings_screen';
 import { AdvisorScreen } from '../features/advisor/advisor_screen';
 import { VideosScreen } from '../features/videos/videos_screen';
 import { AccountScreen } from '../features/account/account_screen';
+import { AgricultureScreen } from '../features/agriculture/agriculture_screen';
 
 export const router = createBrowserRouter([
   {
@@ -20,6 +21,7 @@ export const router = createBrowserRouter([
       { path: 'advisor', element: <AdvisorScreen /> },
       { path: 'videos', element: <VideosScreen /> },
       { path: 'account', element: <AccountScreen /> },
+      { path: 'agriculture', element: <AgricultureScreen /> },
     ],
   },
 ]);
