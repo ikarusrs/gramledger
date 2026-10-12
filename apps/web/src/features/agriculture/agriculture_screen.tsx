@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { localized, useLocale } from '../../core/i18n/LocaleContext';
+import { resolveApiUrl } from '../../lib/api/client';
 
 type Weather = {
   current?: {
@@ -14,7 +15,7 @@ type CalendarItem = { crop: string; cropMr: string; sowing: string; harvest: str
 type Market = Record<string, string | number>;
 
 async function get<T>(path: string): Promise<T> {
-  const response = await fetch(path);
+  const response = await fetch(resolveApiUrl(path));
   if (!response.ok) throw new Error((await response.json()).error?.message ?? 'Request failed');
   return response.json();
 }

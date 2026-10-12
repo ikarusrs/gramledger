@@ -21,7 +21,7 @@ export class ApiError extends Error {
   }
 }
 
-function resolveUrl(path: string): string {
+export function resolveApiUrl(path: string): string {
   const base = config.apiBaseUrl;
   if (!base) return path;
   return `${base.replace(/\/+$/, '')}${path}`;
@@ -29,7 +29,7 @@ function resolveUrl(path: string): string {
 
 export const client = {
   async get<T = unknown>(path: string): Promise<T> {
-    const res = await fetch(resolveUrl(path), {
+    const res = await fetch(resolveApiUrl(path), {
       headers: { Accept: 'application/json' },
     });
     if (!res.ok) {

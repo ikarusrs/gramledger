@@ -4,6 +4,7 @@ import { Link, useParams } from 'react-router-dom';
 import { DemoBanner } from '../../components/DemoBanner';
 import { LevelBadge } from '../../components/LevelBadge';
 import { localized, useLocale } from '../../core/i18n/LocaleContext';
+import { resolveApiUrl } from '../../lib/api/client';
 import { getPanchayat } from '../../lib/api/endpoints';
 import type { ApiResult } from '../../lib/api/endpoints';
 import type { PanchayatDetail } from '../../lib/api/types';
@@ -51,7 +52,7 @@ export function PanchayatScreen() {
   async function save() {
     const token = localStorage.getItem('gramledger:access-token');
     if (!token) return;
-    await fetch('/v1/me/favorites', {
+    await fetch(resolveApiUrl('/v1/me/favorites'), {
       method: 'POST',
       headers: { 'content-type': 'application/json', authorization: `Bearer ${token}` },
       body: JSON.stringify({ panchayatId: detailId }),

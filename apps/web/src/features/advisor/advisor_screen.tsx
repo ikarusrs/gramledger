@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import type { FormEvent } from 'react';
 import { useLocale } from '../../core/i18n/LocaleContext';
+import { resolveApiUrl } from '../../lib/api/client';
 
 type Message = { role: 'user' | 'model'; text: string };
 
@@ -21,7 +22,7 @@ export function AdvisorScreen() {
     setBusy(true);
     setError('');
     try {
-      const response = await fetch('/v1/advisor/chat', {
+      const response = await fetch(resolveApiUrl('/v1/advisor/chat'), {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
         body: JSON.stringify({ message, history: messages.slice(-10) }),

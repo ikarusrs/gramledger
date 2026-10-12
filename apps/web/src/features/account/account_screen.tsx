@@ -3,6 +3,7 @@ import type { FormEvent } from 'react';
 import { Link } from 'react-router-dom';
 import { useTheme } from '../../core/theme/ThemeContext';
 import { useLocale } from '../../core/i18n/LocaleContext';
+import { resolveApiUrl } from '../../lib/api/client';
 
 const USER_KEY = 'gramledger:user';
 type User = { id: string; email: string; name: string | null };
@@ -33,7 +34,7 @@ export function AccountScreen() {
     event.preventDefault();
     setBusy(true);
     setMessage('');
-    const response = await fetch('/v1/auth/request-otp', {
+    const response = await fetch(resolveApiUrl('/v1/auth/request-otp'), {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
       body: JSON.stringify({ email, name }),
@@ -51,7 +52,7 @@ export function AccountScreen() {
     event.preventDefault();
     setBusy(true);
     setMessage('');
-    const response = await fetch('/v1/auth/verify-otp', {
+    const response = await fetch(resolveApiUrl('/v1/auth/verify-otp'), {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
       body: JSON.stringify({ email, name, code }),

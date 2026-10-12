@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import type { FormEvent } from 'react';
 import { useLocale } from '../../core/i18n/LocaleContext';
+import { resolveApiUrl } from '../../lib/api/client';
 
 type Video = { id: string; title: string; description: string; thumbnail: string; channel: string };
 
@@ -18,7 +19,7 @@ export function VideosScreen() {
     setBusy(true);
     setError('');
     try {
-      const response = await fetch(`/v1/videos?q=${encodeURIComponent(query)}`);
+      const response = await fetch(resolveApiUrl(`/v1/videos?q=${encodeURIComponent(query)}`));
       const payload = await response.json();
       if (!response.ok) throw new Error(payload.error?.message ?? 'Video search unavailable');
       setVideos(payload);
