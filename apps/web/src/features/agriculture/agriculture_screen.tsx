@@ -75,8 +75,11 @@ export function AgricultureScreen() {
               <div className="data-row" key={index}>
                 <strong>{String(item.commodity ?? item.Commodity ?? 'Commodity')}</strong>
                 <span>{String(item.market ?? item.Market ?? 'Pune')}</span>
-                <span>Modal {String(item.modal_price ?? item.Modal_Price ?? '—')}</span>
-                <span>{t('perQuintal')}</span>
+                <span>{t('modalPrice')}</span>
+                <strong>
+                  ₹{Number(item.modal_price ?? item.Modal_Price ?? 0).toLocaleString('en-IN')}{' '}
+                  {t('perQuintal')}
+                </strong>
               </div>
             ))
           )}

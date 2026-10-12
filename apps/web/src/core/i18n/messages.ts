@@ -78,7 +78,7 @@ export const mrMessages = {
   todayMarket: 'आजचा बाजार',
   prices: 'बाजारभाव',
   marketNotConfigured: 'बाजारभाव अद्याप जोडलेले नाहीत.',
-  perQuintal: '₹ / क्विंटल',
+  perQuintal: 'प्रति क्विंटल',
   whenToPlant: 'पेरणीची वेळ',
   seasonalCalendar: 'हंगामी दिनदर्शिका',
   sow: 'पेरणी',
@@ -104,6 +104,7 @@ export const mrMessages = {
   thinking: 'तुमच्या प्रश्नाचा विचार करत आहे…',
   primaryNav: 'मुख्य नेव्हिगेशन',
   results: 'परिणाम',
+  modalPrice: 'प्रचलित बाजारभाव',
   you: 'तुम्ही',
   advisorDisclaimer:
     'हा सल्ला शैक्षणिक आहे. स्थानिक कृषी अधिकारी, पशुवैद्य, डॉक्टर किंवा आपत्कालीन सेवांचा पर्याय नाही.',
@@ -191,7 +192,7 @@ export const messages: Record<Locale, Messages> = {
     todayMarket: "Today's market",
     prices: 'Prices',
     marketNotConfigured: 'Market data is not configured yet.',
-    perQuintal: '₹ / quintal',
+    perQuintal: 'per quintal',
     whenToPlant: 'When to plant',
     seasonalCalendar: 'Seasonal calendar',
     sow: 'Sow',
@@ -218,6 +219,7 @@ export const messages: Record<Locale, Messages> = {
     thinking: 'Thinking about your question…',
     primaryNav: 'Primary navigation',
     results: 'Results',
+    modalPrice: 'Typical market price',
     you: 'You',
     advisorDisclaimer:
       'This advice is educational and not a substitute for a local agriculture officer, veterinarian, doctor, or emergency service.',
