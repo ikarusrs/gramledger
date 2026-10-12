@@ -52,7 +52,7 @@ export function AppShell() {
             <BrandMark />
             <span className="brand__name">{t('appTitle')}</span>
           </Link>
-          <nav className="app-bar__nav" aria-label="Primary">
+          <nav className="app-bar__nav" aria-label={t('primaryNav')}>
             <NavLink
               to="/"
               end
@@ -68,7 +68,7 @@ export function AppShell() {
                 `app-bar__link${isActive ? ' app-bar__link--active' : ''}`
               }
             >
-              Advisor
+              {t('advisor')}
             </NavLink>
             <NavLink
               to="/videos"
@@ -76,7 +76,7 @@ export function AppShell() {
                 `app-bar__link${isActive ? ' app-bar__link--active' : ''}`
               }
             >
-              Farm School
+              {t('farmSchool')}
             </NavLink>
             <NavLink
               to="/settings"
@@ -92,7 +92,7 @@ export function AppShell() {
                 `app-bar__link${isActive ? ' app-bar__link--active' : ''}`
               }
             >
-              Field Notes
+              {t('fieldNotes')}
             </NavLink>
             <NavLink to="/account" className="app-bar__link app-bar__account">
               Account

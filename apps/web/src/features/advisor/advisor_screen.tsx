@@ -1,9 +1,11 @@
 import { useState } from 'react';
 import type { FormEvent } from 'react';
+import { useLocale } from '../../core/i18n/LocaleContext';
 
 type Message = { role: 'user' | 'model'; text: string };
 
 export function AdvisorScreen() {
+  const { t } = useLocale();
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
   const [busy, setBusy] = useState(false);
@@ -39,21 +41,18 @@ export function AdvisorScreen() {
       <header className="page__head">
         <div>
           <h1 className="page__title">Shetkari Mitra</h1>
-          <p className="page__subtitle">कृषी, पशुपालन आणि ग्रामीण जीवनासाठी विश्वासू मार्गदर्शक</p>
+          <p className="page__subtitle">{t('advisorDescription')}</p>
         </div>
       </header>
       <section className="feature-hero">
-        <span className="eyebrow">AGRICULTURE ADVISOR</span>
-        <h2>Ask about your farm, village, or next season.</h2>
-        <p>
-          Get practical guidance in Marathi or English. Share your crop, district, soil, weather,
-          and what you are seeing for a more useful answer.
-        </p>
+        <span className="eyebrow">{t('agricultureAdvisor')}</span>
+        <h2>{t('advisorHero')}</h2>
+        <p>{t('advisorDescription')}</p>
       </section>
       <section className="card advisor-chat" aria-live="polite">
         {messages.length === 0 && (
           <div className="advisor-empty">
-            <strong>Start with a real question</strong>
+            <strong>{t('startQuestion')}</strong>
             <span>“माझ्या कापसाच्या पिकावर पांढरे डाग दिसत आहेत, काय करू?”</span>
             <span>“What vegetables can I plant in Nashik this month?”</span>
           </div>
@@ -67,7 +66,7 @@ export function AdvisorScreen() {
         {busy && (
           <div className="chat-message chat-message--model">
             <span>Shetkari Mitra</span>
-            <p>Thinking about your question…</p>
+            <p>{t('thinking')}</p>
           </div>
         )}
         {error && <p className="form-error">{error}</p>}
@@ -75,12 +74,12 @@ export function AdvisorScreen() {
           <textarea
             value={input}
             onChange={(event) => setInput(event.target.value)}
-            placeholder="Ask in Marathi or English…"
+            placeholder={t('askPlaceholder')}
             maxLength={4000}
             rows={3}
           />
           <button className="primary-btn" disabled={busy || !input.trim()}>
-            {busy ? 'Sending…' : 'Ask advisor'}
+            {busy ? t('sending') : t('askAdvisor')}
           </button>
         </form>
         <small className="muted">

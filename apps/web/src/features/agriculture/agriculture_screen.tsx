@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useLocale } from '../../core/i18n/LocaleContext';
 
 type Weather = {
   current?: {
@@ -19,6 +20,7 @@ async function get<T>(path: string): Promise<T> {
 }
 
 export function AgricultureScreen() {
+  const { t } = useLocale();
   const [weather, setWeather] = useState<Weather | null>(null);
   const [schemes, setSchemes] = useState<Scheme[]>([]);
   const [calendar, setCalendar] = useState<CalendarItem[]>([]);
@@ -45,37 +47,35 @@ export function AgricultureScreen() {
     <div className="page">
       <header className="page__head">
         <div>
-          <h1 className="page__title">Field Notes</h1>
-          <p className="page__subtitle">
-            Weather, crop timing, and public schemes for Maharashtra farmers.
-          </p>
+          <h1 className="page__title">{t('fieldNotes')}</h1>
+          <p className="page__subtitle">{t('fieldNotesSubtitle')}</p>
         </div>
       </header>
       {error && <p className="form-error">{error}</p>}
       <section className="agri-lead">
-        <span className="eyebrow">PUNE · TODAY</span>
+        <span className="eyebrow">PUNE · {t('today').toUpperCase()}</span>
         <h2>{weather?.current?.temperature_2m ?? '—'}°C</h2>
         <p>
           {weather
-            ? `${weather.current?.relative_humidity_2m ?? '—'}% humidity · ${weather.current?.precipitation ?? 0} mm rain · ${weather.current?.wind_speed_10m ?? '—'} km/h wind`
-            : 'Loading local conditions…'}
+            ? `${weather.current?.relative_humidity_2m ?? '—'}% ${t('humidity')} · ${weather.current?.precipitation ?? 0} mm ${t('rain')} · ${weather.current?.wind_speed_10m ?? '—'} km/h ${t('wind')}`
+            : t('weatherLoading')}
         </p>
       </section>
       <section className="data-section">
         <div className="section-heading">
-          <span className="eyebrow">TODAY'S MARKET</span>
-          <h2>Prices</h2>
+          <span className="eyebrow">{t('todayMarket')}</span>
+          <h2>{t('prices')}</h2>
         </div>
         <div className="data-list">
           {markets.length === 0 ? (
-            <p className="muted">Market data is not configured yet.</p>
+            <p className="muted">{t('marketNotConfigured')}</p>
           ) : (
             markets.slice(0, 8).map((item, index) => (
               <div className="data-row" key={index}>
                 <strong>{String(item.commodity ?? item.Commodity ?? 'Commodity')}</strong>
                 <span>{String(item.market ?? item.Market ?? 'Pune')}</span>
                 <span>Modal {String(item.modal_price ?? item.Modal_Price ?? '—')}</span>
-                <span>₹ / quintal</span>
+                <span>{t('perQuintal')}</span>
               </div>
             ))
           )}
@@ -83,24 +83,28 @@ export function AgricultureScreen() {
       </section>
       <section className="data-section">
         <div className="section-heading">
-          <span className="eyebrow">WHEN TO PLANT</span>
-          <h2>Seasonal calendar</h2>
+          <span className="eyebrow">{t('whenToPlant')}</span>
+          <h2>{t('seasonalCalendar')}</h2>
         </div>
         <div className="data-list">
           {calendar.map((item) => (
             <div className="data-row" key={item.crop}>
               <strong>{item.cropMr}</strong>
               <span>{item.crop}</span>
-              <span>Sow {item.sowing}</span>
-              <span>Harvest {item.harvest}</span>
+              <span>
+                {t('sow')} {item.sowing}
+              </span>
+              <span>
+                {t('harvest')} {item.harvest}
+              </span>
             </div>
           ))}
         </div>
       </section>
       <section className="data-section">
         <div className="section-heading">
-          <span className="eyebrow">PUBLIC SUPPORT</span>
-          <h2>Government schemes</h2>
+          <span className="eyebrow">{t('publicSupport')}</span>
+          <h2>{t('governmentSchemes')}</h2>
         </div>
         <div className="scheme-list">
           {schemes.map((scheme) => (

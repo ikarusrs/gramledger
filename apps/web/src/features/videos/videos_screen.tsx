@@ -1,9 +1,11 @@
 import { useState } from 'react';
 import type { FormEvent } from 'react';
+import { useLocale } from '../../core/i18n/LocaleContext';
 
 type Video = { id: string; title: string; description: string; thumbnail: string; channel: string };
 
 export function VideosScreen() {
+  const { t } = useLocale();
   const [query, setQuery] = useState('organic farming');
   const [videos, setVideos] = useState<Video[]>([]);
   const [selected, setSelected] = useState<Video | null>(null);
@@ -32,29 +34,24 @@ export function VideosScreen() {
     <div className="page">
       <header className="page__head">
         <div>
-          <h1 className="page__title">Farm School</h1>
-          <p className="page__subtitle">
-            Curated tutorials for farming and rural life in Maharashtra
-          </p>
+          <h1 className="page__title">{t('farmSchool')}</h1>
+          <p className="page__subtitle">{t('farmSchoolSubtitle')}</p>
         </div>
       </header>
       <section className="feature-hero feature-hero--gold">
-        <span className="eyebrow">LEARN BY WATCHING</span>
-        <h2>Find practical videos, not random noise.</h2>
-        <p>
-          Search is narrowed to agriculture, farmers, rural livelihoods, and Marathi or Hindi
-          learning content.
-        </p>
+        <span className="eyebrow">{t('learnByWatching')}</span>
+        <h2>{t('farmSchoolHero')}</h2>
+        <p>{t('farmSchoolDescription')}</p>
       </section>
       <form className="video-search" onSubmit={search}>
         <input
           className="search-box__input"
           value={query}
           onChange={(event) => setQuery(event.target.value)}
-          placeholder="Try: drip irrigation for tomatoes"
+          placeholder={t('tutorialPlaceholder')}
         />
         <button className="primary-btn" disabled={busy}>
-          {busy ? 'Searching…' : 'Search tutorials'}
+          {busy ? t('pleaseWait') : t('searchTutorials')}
         </button>
       </form>
       {error && <p className="form-error">{error}</p>}

@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import type { FormEvent } from 'react';
 import { Link } from 'react-router-dom';
 import { useTheme } from '../../core/theme/ThemeContext';
+import { useLocale } from '../../core/i18n/LocaleContext';
 
 const USER_KEY = 'gramledger:user';
 type User = { id: string; email: string; name: string | null };
@@ -9,6 +10,7 @@ const TOKEN_KEY = 'gramledger:access-token';
 
 export function AccountScreen() {
   const { mode, setMode } = useTheme();
+  const { t } = useLocale();
   const [user, setUser] = useState<User | null>(null);
   const [email, setEmail] = useState('');
   const [name, setName] = useState('');
@@ -31,16 +33,12 @@ export function AccountScreen() {
     });
     setBusy(false);
     if (!response.ok) {
-      setMessage((await response.json()).error?.message ?? 'Could not send the code');
+      setMessage((await response.json()).error?.message ?? t('codeSent'));
       return;
     }
     const payload = await response.json();
     setStep('code');
-    setMessage(
-      payload.devCode
-        ? `Development code: ${payload.devCode}`
-        : 'Check your email for a 6-digit code.',
-    );
+    setMessage(payload.devCode ? `${t('developmentCode')}: ${payload.devCode}` : t('codeSent'));
   }
   async function verify(event: FormEvent) {
     event.preventDefault();
@@ -54,7 +52,7 @@ export function AccountScreen() {
     const payload = await response.json();
     setBusy(false);
     if (!response.ok) {
-      setMessage(payload.error?.message ?? 'Could not verify the code');
+      setMessage(payload.error?.message ?? t('verifyCode'));
       return;
     }
     localStorage.setItem(TOKEN_KEY, payload.accessToken);
@@ -71,8 +69,8 @@ export function AccountScreen() {
     <div className="page">
       <header className="page__head">
         <div>
-          <h1 className="page__title">Account</h1>
-          <p className="page__subtitle">Your GramLedger profile and preferences</p>
+          <h1 className="page__title">{t('account')}</h1>
+          <p className="page__subtitle">{t('accountSubtitle')}</p>
         </div>
       </header>
       {user ? (
@@ -81,25 +79,25 @@ export function AccountScreen() {
           <h2 className="card__title">{user.name ?? user.email}</h2>
           <p className="muted">{user.email}</p>
           <button className="secondary-btn" onClick={signOut}>
-            Sign out
+            {t('signOut')}
           </button>
         </section>
       ) : (
         <section className="card stack">
-          <h2 className="card__title">Sign in to save your villages and questions</h2>
-          <p className="muted">We’ll send a one-time code. No password is stored.</p>
+          <h2 className="card__title">{t('signInTitle')}</h2>
+          <p className="muted">{t('otpHint')}</p>
           <form className="stack" onSubmit={step === 'email' ? signIn : verify}>
             <label className="field">
-              <span className="field__label">Name</span>
+              <span className="field__label">{t('name')}</span>
               <input
                 className="search-box__input"
                 value={name}
                 onChange={(event) => setName(event.target.value)}
-                placeholder="Your name"
+                placeholder={t('yourName')}
               />
             </label>
             <label className="field">
-              <span className="field__label">Email</span>
+              <span className="field__label">{t('email')}</span>
               <input
                 className="search-box__input"
                 type="email"
@@ -111,7 +109,7 @@ export function AccountScreen() {
             </label>
             {step === 'code' && (
               <label className="field">
-                <span className="field__label">6-digit code</span>
+                <span className="field__label">{t('sixDigitCode')}</span>
                 <input
                   className="search-box__input"
                   inputMode="numeric"
@@ -124,13 +122,13 @@ export function AccountScreen() {
             )}
             {message && <p className="muted">{message}</p>}
             <button className="primary-btn" disabled={busy}>
-              {busy ? 'Please wait…' : step === 'email' ? 'Send code' : 'Verify code'}
+              {busy ? t('pleaseWait') : step === 'email' ? t('sendCode') : t('verifyCode')}
             </button>
           </form>
         </section>
       )}
       <section className="card stack">
-        <h2 className="card__title">Appearance</h2>
+        <h2 className="card__title">{t('appearance')}</h2>
         <div className="segmented">
           {(['light', 'dark', 'system'] as const).map((option) => (
             <button

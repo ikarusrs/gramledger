@@ -74,7 +74,7 @@ export function PanchayatScreen() {
         {detail.talukaNameMr ?? detail.talukaNameEn}
       </p>
       <button className="secondary-btn" onClick={save}>
-        Save this panchayat
+        {t('savePanchayat')}
       </button>
 
       <div className="card">
