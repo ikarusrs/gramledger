@@ -8,3 +8,4 @@ GROQ_MODEL=llama-3.3-70b-versatile
 RESEND_API_KEY=re_your-resend-api-key
 AUTH_FROM_EMAIL=GramLedger <auth@example.com>
 JWT_SECRET=replace-with-a-long-random-secret
+# In local development, Resend can be omitted and the OTP appears in the app.

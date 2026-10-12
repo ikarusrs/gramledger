@@ -66,7 +66,10 @@ authRouter.post('/auth/request-otp', zValidator('json', emailSchema), async (c) 
   const db = c.get('db') as Db | undefined;
   const apiKey = c.env.RESEND_API_KEY;
   const from = c.env.AUTH_FROM_EMAIL;
-  if (!db || !apiKey || !from) throw serviceUnavailable('Email sign-in is not configured');
+  const isDevelopment = c.env.ENVIRONMENT === 'development';
+  if (!db || (!isDevelopment && (!apiKey || !from))) {
+    throw serviceUnavailable('Email sign-in is not configured');
+  }
   const { email, name } = c.req.valid('json');
   const normalizedEmail = email.toLowerCase();
   const rows = await db.query(
@@ -80,13 +83,19 @@ authRouter.post('/auth/request-otp', zValidator('json', emailSchema), async (c) 
     "INSERT INTO otp_tokens (user_id, hashed_code, expires_at) VALUES ($1, $2, now() + interval '10 minutes')",
     [userId, await hash(code)],
   );
-  await sendOtp(apiKey, from, normalizedEmail, code);
-  return c.json({ ok: true });
+  if (apiKey && from) {
+    await sendOtp(apiKey, from, normalizedEmail, code);
+    return c.json({ ok: true });
+  }
+  console.log('Development OTP generated', { email: normalizedEmail, code });
+  return c.json({ ok: true, devCode: code });
 });
 
 authRouter.post('/auth/verify-otp', zValidator('json', verifySchema), async (c) => {
   const db = c.get('db') as Db | undefined;
-  const secret = c.env.JWT_SECRET;
+  const secret =
+    c.env.JWT_SECRET ??
+    (c.env.ENVIRONMENT === 'development' ? 'local-development-only-jwt-secret' : undefined);
   if (!db || !secret) throw serviceUnavailable('Authentication is not configured');
   const { email, code } = c.req.valid('json');
   const rows = await db.query(

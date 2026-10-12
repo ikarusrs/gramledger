@@ -34,8 +34,13 @@ export function AccountScreen() {
       setMessage((await response.json()).error?.message ?? 'Could not send the code');
       return;
     }
+    const payload = await response.json();
     setStep('code');
-    setMessage('Check your email for a 6-digit code.');
+    setMessage(
+      payload.devCode
+        ? `Development code: ${payload.devCode}`
+        : 'Check your email for a 6-digit code.',
+    );
   }
   async function verify(event: FormEvent) {
     event.preventDefault();
