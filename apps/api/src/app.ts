@@ -8,6 +8,7 @@ import { errorHandler } from './middleware/error-handler';
 import { notFound } from './lib/errors';
 import { dbLayer } from './middleware/db';
 import type { Db } from './lib/db';
+import { cors } from 'hono/cors';
 
 /**
  * Composes the application. Kept separate from the worker entry (`index.ts`)
@@ -17,6 +18,19 @@ import type { Db } from './lib/db';
 export function buildApp(options: { db?: Db } = {}): Hono<AppEnv> {
   const app = new Hono<AppEnv>();
 
+  app.use(
+    '*',
+    cors({
+      origin: (origin) =>
+        origin === 'https://gramledger.pages.dev' ||
+        origin.endsWith('.gramledger.pages.dev') ||
+        origin.startsWith('http://localhost:')
+          ? origin
+          : undefined,
+      allowHeaders: ['Content-Type', 'Authorization'],
+      allowMethods: ['GET', 'POST', 'DELETE', 'OPTIONS'],
+    }),
+  );
   app.use('*', requestId());
   app.use('*', requestLogger());
   app.use('*', dbLayer(options.db));
